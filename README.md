@@ -28,6 +28,7 @@
 - 📸 **Screenshot Capture** - Full-page and region screenshots with annotations
 - 🛡️ **Error Handling** - Clear error messages and comprehensive logging
 - ⚡ **Performance Optimization** - Efficient batch processing and caching
+- 🕵️ **Anti-Detection** - Stealth mode with random User-Agent rotation
 
 ---
 
@@ -35,23 +36,23 @@
 
 ### Prerequisites
 
-| Requirement | Version |
-|------------|---------|
-| Node.js | ≥ 18.0.0 |
-| npm | ≥ 9.0.0 |
-| Chromium | For Puppeteer (optional) |
+| Requirement | Version | Notes |
+|------------|---------|-------|
+| Node.js | ≥ 18.0.0 | [Download](https://nodejs.org/) |
+| npm | ≥ 9.0.0 | Included with Node.js |
+| Chromium | Optional | Required for JS-rendered pages |
 
 ### Installation
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/nicholasjq/visual-spider.git
-cd visual-spider
+git clone https://github.com/badhope/VisualSpider.git
+cd VisualSpider
 
 # 2. Install frontend dependencies
 npm install
 
-# 3. Install backend dependencies (optional, for Puppeteer support)
+# 3. Install backend dependencies (optional)
 cd server && npm install
 cd ..
 
@@ -59,20 +60,25 @@ cd ..
 npm run dev
 ```
 
-### Access the Application
+### Environment Setup (Optional)
 
-- **Frontend**: http://localhost:5173/
-- **Backend API**: http://localhost:3000/
-
-### Environment Setup
-
-If you encounter Chromium installation issues, run:
+For Puppeteer browser automation support:
 
 ```bash
+# Setup browser and environment
 npm run setup:env
+
+# Or run server setup manually
+cd server && npm run setup-browser
 ```
 
-This will automatically detect and configure the runtime environment.
+### Access the Application
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| Frontend | http://localhost:1420 | Main application |
+| Backend API | http://localhost:3000 | API documentation |
+| Health Check | http://localhost:3000/api/health | Server status |
 
 ---
 
@@ -81,49 +87,42 @@ This will automatically detect and configure the runtime environment.
 ### 1. Create a Crawl Task
 
 1. Navigate to **Task Config** page
-2. Enter the target URL
-3. Add data selectors (CSS or XPath)
-4. Configure pagination (optional)
+2. Enter the target URL (e.g., `https://example.com/products`)
+3. Click **Auto Detect** or manually add data selectors
+4. Configure pagination if needed
 5. Click **Start Crawling**
 
-### 2. Test Selectors
+### 2. Configure Selectors
 
-Use the **Selector Tester** tool to validate your selectors before running a task:
+Supported selector types:
 
-```
-# CSS Selector examples
-.product-card .title
-#item-price
-div[data-product]
+| Type | Example | Use Case |
+|------|---------|----------|
+| CSS | `.product-card .title` | Class-based elements |
+| XPath | `//div[@class='title']` | Complex queries |
+| Regex | `\d+\.\d{2}` | Pattern matching |
 
-# XPath examples
-//div[@class='product-card']//h3
-//span[@id='price']
-```
+### 3. Data Cleaning
 
-### 3. Clean Data
+Upload raw data files to **Data Clean** page:
 
-Upload raw data files (CSV, JSON, Excel) to the **Data Clean** page for processing:
-
-- Remove duplicates
-- Trim whitespace
-- Find and replace
-- Regular expression operations
+- **Transform**: Remove duplicates, trim whitespace, find & replace
+- **Format Convert**: Convert between CSV, JSON, Excel, XML, HTML
+- **Text Analysis**: Statistics, keywords, sentiment analysis
+- **Regex Tool**: Test and apply regular expressions
 
 ### 4. Export Results
 
-Supported export formats:
-
-| Format | Extension | Description |
-|--------|-----------|-------------|
-| CSV | .csv | Comma-separated values |
-| JSON | .json | JavaScript Object Notation |
-| Excel | .xlsx | Microsoft Excel workbook |
-| HTML | .html | HTML table format |
-| PDF | .pdf | Portable Document Format |
-| Markdown | .md | Markdown table |
-| TSV | .tsv | Tab-separated values |
-| XML | .xml | Extensible Markup Language |
+| Format | Extension | Best For |
+|--------|-----------|----------|
+| CSV | .csv | Spreadsheets, databases |
+| JSON | .json | APIs, structured data |
+| Excel | .xlsx | Microsoft Excel |
+| HTML | .html | Web pages, reports |
+| PDF | .pdf | Documentation |
+| Markdown | .md | GitHub, wikis |
+| TSV | .tsv | Tab-separated data |
+| XML | .xml | Structured documents |
 
 ---
 
@@ -132,113 +131,209 @@ Supported export formats:
 ```
 visual-spider/
 ├── src/
-│   ├── components/       # Reusable Vue components
+│   ├── components/          # Reusable Vue components
 │   │   ├── LanguageSwitcher.vue
 │   │   ├── LogViewer.vue
 │   │   ├── NotificationPanel.vue
 │   │   ├── ErrorDetail.vue
 │   │   └── WelcomeGuide.vue
-│   ├── views/           # Page components
-│   │   ├── TaskConfig.vue
-│   │   ├── TaskList.vue
-│   │   ├── DataClean.vue
-│   │   ├── SelectorTester.vue
-│   │   ├── Screenshot.vue
-│   │   ├── UrlAnalyzer.vue
-│   │   ├── BrowserInfo.vue
-│   │   ├── InterfaceAdapter.vue
-│   │   ├── ServerManager.vue
-│   │   └── Settings.vue
-│   ├── locales/         # Internationalization files
-│   │   ├── en.json
-│   │   └── zh-CN.json
-│   ├── stores/          # Pinia state management
-│   ├── router/          # Vue Router configuration
-│   ├── services/        # API services
-│   ├── utils/           # Utility functions
-│   └── types/           # TypeScript type definitions
-├── server/              # Backend server (Puppeteer)
+│   ├── views/              # Page components
+│   │   ├── TaskConfig.vue       # Crawl task configuration
+│   │   ├── TaskList.vue         # Task management
+│   │   ├── DataClean.vue        # Data cleaning tools
+│   │   ├── SelectorTester.vue   # Selector testing
+│   │   ├── Screenshot.vue        # Screenshot capture
+│   │   ├── UrlAnalyzer.vue      # URL analysis
+│   │   ├── ServerManager.vue    # Backend management
+│   │   └── Settings.vue         # Application settings
+│   ├── locales/             # i18n translations
+│   │   ├── en.json          # English
+│   │   └── zh-CN.json       # Chinese
+│   ├── stores/              # Pinia state management
+│   ├── services/            # API services
+│   ├── utils/               # Utility functions
+│   └── types/               # TypeScript definitions
+├── server/                  # Backend (Express + Puppeteer)
 │   └── src/
-│       ├── routes/      # API routes
-│       └── utils/       # Server utilities
-├── public/              # Static assets
-│   └── test-pages/      # Test pages for development
-└── dist/                # Production build output
+│       ├── routes/          # API endpoints
+│       │   ├── crawler.ts    # Crawling logic
+│       │   ├── browser.ts    # Browser automation
+│       │   └── proxy.ts      # Proxy management
+│       └── utils/           # Server utilities
+├── public/
+│   └── test-pages/         # Test pages
+├── .github/
+│   └── workflows/          # CI/CD pipelines
+└── dist/                    # Production build
 ```
 
 ---
 
 ## 🌍 Internationalization
 
-VisualSpider supports **English** and **Chinese** languages. Click the 🌐 icon in the header to switch languages.
+VisualSpider supports **English** and **Chinese**. Click the 🌐 icon in the header to switch languages.
+
+### Supported Languages
+
+| Code | Language | Status |
+|------|----------|--------|
+| en | English | ✅ Complete |
+| zh-CN | 简体中文 | ✅ Complete |
 
 ### Adding New Languages
 
-1. Create a new locale file in `src/locales/` (e.g., `ja.json` for Japanese)
-2. Add the locale to `src/locales/index.ts`
-3. Update the language switcher component
+1. Create `src/locales/{locale}.json`
+2. Add locale to `src/locales/index.ts`
+3. Update `LanguageSwitcher.vue`
 
 ---
 
 ## 🔧 Advanced Features
 
-### Proxy Pool Management
+### Anti-Detection Settings
 
-Configure proxy servers for improved crawling:
+The crawler includes stealth mode to avoid blocking:
+
+- **Random User-Agent Rotation** - 6 browser profiles
+- **Stealth Mode** - Hides webdriver property
+- **Navigator Override** - Masks automation signatures
+- **Request Interception** - Blocks tracking resources
+
+### Proxy Pool
+
+Configure proxy servers in **Settings**:
 
 ```bash
-# Add proxies via the Proxy panel
-http://proxy1.example.com:8080
-https://user:pass@proxy2.example.com:8080
-socks5://proxy3.example.com:1080
+# HTTP proxy
+http://proxy.example.com:8080
+
+# HTTPS proxy
+https://proxy.example.com:8080
+
+# SOCKS5 proxy
+socks5://proxy.example.com:1080
+
+# Authenticated proxy
+http://user:pass@proxy.example.com:8080
 ```
 
-### Task Scheduling
+### Browser Automation (Backend)
 
-Schedule tasks using Cron expressions:
+The backend server provides:
 
-```
-# Every hour
-0 * * * *
-
-# Every day at midnight
-0 0 * * *
-
-# Every Monday at 9 AM
-0 9 * * 1
-```
-
-### Browser Automation
-
-The backend server provides browser automation capabilities:
-
-- Launch headless Chrome
-- Navigate to pages
-- Execute JavaScript
-- Take screenshots
-- Extract dynamic content
+| Feature | Description |
+|---------|-------------|
+| Launch Browser | Start headless Chrome |
+| Navigate | Open URLs |
+| Evaluate | Execute JavaScript |
+| Screenshot | Capture page images |
+| Cookies | Manage authentication |
 
 ---
 
 ## 📝 API Reference
 
-### Frontend API Endpoints
+### Crawler Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | /api/health | Health check |
 | POST | /api/crawler/crawl | Start crawl task |
-| GET | /api/crawler/status/:id | Get task status |
+| GET | /api/crawler/tasks | List all tasks |
+| GET | /api/crawler/task/:id | Get task details |
+| DELETE | /api/crawler/task/:id | Delete task |
+
+### Browser Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
 | POST | /api/browser/launch | Launch browser |
+| POST | /api/browser/close | Close browser |
 | POST | /api/browser/screenshot | Take screenshot |
+| POST | /api/browser/evaluate | Run JS code |
+
+### Proxy Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
 | GET | /api/proxy/list | List proxies |
+| POST | /api/proxy/add | Add proxy |
 | POST | /api/proxy/test | Test proxy |
+| DELETE | /api/proxy/:id | Remove proxy |
+
+---
+
+## 🔒 Upload Instructions
+
+### Preparing Your Data
+
+#### File Format Requirements
+
+| Format | Extension | Max Size | Encoding |
+|--------|-----------|----------|----------|
+| CSV | .csv | 50MB | UTF-8 |
+| JSON | .json | 20MB | UTF-8 |
+| Excel | .xlsx | 20MB | - |
+| Text | .txt | 10MB | UTF-8 |
+
+#### Naming Conventions
+
+```
+# Files should follow these naming rules:
+- Use alphanumeric characters only
+- No spaces, use underscores or hyphens
+- Include date if relevant: data_20240115.csv
+- Be descriptive: product_list_q1.csv
+
+# Examples:
+✅ valid_file_name.csv
+✅ product-data-2024.csv
+✅ article_titles.json
+❌ my file.csv (spaces not allowed)
+❌ file@name.csv (special chars not allowed)
+```
+
+### Upload Steps
+
+1. **Prepare your data file**
+   - Convert to supported format (CSV, JSON, Excel)
+   - Ensure UTF-8 encoding
+   - Follow naming conventions
+
+2. **Navigate to Data Clean page**
+   - Click "导入数据" or "Quick Import"
+   - Select file format
+
+3. **Configure processing options**
+   - Select transformation operations
+   - Set regex patterns if needed
+   - Choose output format
+
+4. **Export processed data**
+   - Select target format
+   - Click export button
+   - Save to local directory
+
+### Error Handling
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| File too large | Exceeds size limit | Split into smaller files |
+| Invalid encoding | Non-UTF-8 content | Re-save with UTF-8 encoding |
+| Parse error | Malformed file | Check file structure |
+| Format mismatch | Wrong file type | Verify file extension |
+
+### Verification Methods
+
+1. **Preview**: Check data preview before processing
+2. **Validate**: Use "Test" button for regex patterns
+3. **Export Sample**: Export first 100 rows for verification
+4. **Checksum**: Compare file hash before/after upload
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting pull requests.
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md).
 
 ### Development Setup
 
@@ -249,38 +344,50 @@ npm install
 # Start development server
 npm run dev
 
-# Run type checking
+# Type checking
 npm run typecheck
 
-# Run linter
+# Linting
 npm run lint
 
-# Run tests
+# Testing
 npm run test
+
+# Build for production
+npm run build
 ```
+
+### Code Style
+
+- Use **Vue 3 Composition API**
+- Follow **TypeScript** best practices
+- Use **Element Plus** components
+- Follow existing naming conventions
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
 ## 🙏 Acknowledgments
 
 - [Vue.js](https://vuejs.org/) - The Progressive JavaScript Framework
-- [Element Plus](https://element-plus.org/) - A Vue.js UI Library
+- [Element Plus](https://element-plus.org/) - A Vue.js 3 UI Library
 - [Puppeteer](https://pptr.dev/) - Headless Chrome Node.js API
 - [xlsx](https://sheetjs.com/) - SheetJS Excel/CSV Parser
 - [html2canvas](https://html2canvas.hertzen.com/) - HTML-to-Canvas converter
 
 ---
 
-## 📧 Contact
+## 📧 Contact & Support
 
-- **GitHub Issues**: [Report a bug or request a feature](https://github.com/nicholasjq/visual-spider/issues)
-- **Email**: support@visualspider.dev
+| Channel | Link |
+|---------|------|
+| GitHub Issues | [Report bugs or request features](https://github.com/badhope/VisualSpider/issues) |
+| Documentation | [Wiki](https://github.com/badhope/VisualSpider/wiki) |
 
 ---
 
