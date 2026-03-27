@@ -4,12 +4,12 @@ import zhCN from './zh-CN.json'
 
 export type MessageSchema = typeof en
 
-const savedLocale = localStorage.getItem('visual-spider-locale') || 'en'
+const savedLocale = localStorage.getItem('windows-toolbox-locale') || 'zh-CN'
 
 export const i18n = createI18n({
   legacy: false,
   locale: savedLocale,
-  fallbackLocale: 'en',
+  fallbackLocale: 'zh-CN',
   messages: {
     'en': en,
     'zh-CN': zhCN
@@ -18,7 +18,7 @@ export const i18n = createI18n({
 
 export function setLocale(locale: 'en' | 'zh-CN'): void {
   (i18n.global as any).locale.value = locale
-  localStorage.setItem('visual-spider-locale', locale)
+  localStorage.setItem('windows-toolbox-locale', locale)
   document.documentElement.setAttribute('lang', locale)
 }
 

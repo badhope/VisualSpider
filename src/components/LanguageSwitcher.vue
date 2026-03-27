@@ -2,16 +2,16 @@
   <el-dropdown trigger="click" @command="handleCommand">
     <el-button class="language-btn" circle>
       <el-icon size="18">
-        <Connection />
+        <Globe />
       </el-icon>
     </el-button>
     <template #dropdown>
       <el-dropdown-menu>
-        <el-dropdown-item command="en" :class="{ 'is-active': currentLocale === 'en' }">
-          <span class="locale-name">🇺🇸 English</span>
-        </el-dropdown-item>
         <el-dropdown-item command="zh-CN" :class="{ 'is-active': currentLocale === 'zh-CN' }">
           <span class="locale-name">🇨🇳 中文</span>
+        </el-dropdown-item>
+        <el-dropdown-item command="en" :class="{ 'is-active': currentLocale === 'en' }">
+          <span class="locale-name">🇺🇸 English</span>
         </el-dropdown-item>
       </el-dropdown-menu>
     </template>
@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Connection } from '@element-plus/icons-vue'
+import { Globe } from '@element-plus/icons-vue'
 import { setLocale, getLocale } from '@/locales'
 
 const currentLocale = computed(() => getLocale())

@@ -1,12 +1,12 @@
 [package]
-name = "visual-spider"
+name = "windows-toolbox"
 version = "1.0.0"
-description = "A visual web crawler application"
-authors = ["VisualSpider Team"]
+description = "Windows系统工具箱"
+authors = ["WindowsToolbox Team"]
 edition = "2021"
 
 [lib]
-name = "visual_spider_lib"
+name = "windows_toolbox_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -20,9 +20,21 @@ serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 log = "0.4"
 env_logger = "0.11"
-reqwest = { version = "0.12", features = ["json"] }
-regex = "1"
-url = "2"
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_System_Registry",
+    "Win32_System_Threading",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Services",
+    "Win32_System_SystemInformation",
+    "Win32_System_Environment",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_Networking_WinSock",
+    "Win32_Storage_FileSystem",
+    "Win32_Security"
+] }
+winreg = "0.52"
+sysinfo = "0.32"
 
 [profile.release]
 panic = "abort"

@@ -1,0 +1,145 @@
+<template>
+  <div class="services">
+    <el-card>
+      <template #header>
+        <div class="card-header">
+          <span>{{ $t('services.title') }}</span>
+          <div class="header-actions">
+            <el-input
+              v-model="searchText"
+              :placeholder="$t('common.search')"
+              clearable
+              style="width: 200px; margin-right: 12px;"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+            <el-button @click="loadServices">
+              <el-icon><Refresh /></el-icon>
+              {{ $t('services.refresh') }}
+            </el-button>
+          </div>
+        </div>
+      </template>
+      
+      <el-table :data="filteredServices" v-loading="loading" border stripe>
+        <el-table-column prop="name" :label="$t('services.serviceName')" width="200" show-overflow-tooltip />
+        <el-table-column prop="displayName" :label="$t('services.displayName')" show-overflow-tooltip />
+        <el-table-column prop="status" :label="$t('services.status')" width="120">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.status)">
+              {{ $t(`services.${row.status.toLowerCase()}`) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="startType" :label="$t('services.startType')" width="120">
+          <template #default="{ row }">
+            <el-tag type="info">{{ $t(`services.${row.startType.toLowerCase()}`) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="200" fixed="right">
+          <template #default="{ row }">
+            <el-button 
+              v-if="row.status !== 'Running'" 
+              type="success" 
+              size="small"
+              @click="controlService(row.name, 'start')"
+            >
+              {{ $t('services.start') }}
+            </el-button>
+            <el-button 
+              v-if="row.status === 'Running' && row.canStop" 
+              type="warning" 
+              size="small"
+              @click="controlService(row.name, 'stop')"
+            >
+              {{ $t('services.stop') }}
+            </el-button>
+            <el-button 
+              v-if="row.status === 'Running'" 
+              type="primary" 
+              size="small"
+              @click="controlService(row.name, 'restart')"
+            >
+              {{ $t('services.restart') }}
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
+import { ElMessage } from 'element-plus'
+import { Search, Refresh } from '@element-plus/icons-vue'
+import type { SystemService } from '@/types'
+
+const loading = ref(false)
+const searchText = ref('')
+const services = ref<SystemService[]>([])
+
+const filteredServices = computed(() => {
+  if (!searchText.value) return services.value
+  const search = searchText.value.toLowerCase()
+  return services.value.filter(s => 
+    s.name.toLowerCase().includes(search) ||
+    s.displayName.toLowerCase().includes(search)
+  )
+})
+
+function getStatusType(status: string) {
+  switch (status) {
+    case 'Running': return 'success'
+    case 'Stopped': return 'info'
+    case 'Paused': return 'warning'
+    default: return ''
+  }
+}
+
+async function loadServices() {
+  loading.value = true
+  try {
+    const result = await invoke<SystemService[]>('get_services')
+    services.value = result
+  } catch (error) {
+    ElMessage.error(`加载服务列表失败: ${error}`)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function controlService(name: string, action: 'start' | 'stop' | 'restart') {
+  try {
+    await invoke(`service_${action}`, { name })
+    ElMessage.success(`服务 ${name} ${action === 'start' ? '启动' : action === 'stop' ? '停止' : '重启'}成功`)
+    await loadServices()
+  } catch (error) {
+    ElMessage.error(`操作失败: ${error}`)
+  }
+}
+
+onMounted(() => {
+  loadServices()
+})
+</script>
+
+<style scoped>
+.services {
+  padding: 0;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+</style>

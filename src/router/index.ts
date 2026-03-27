@@ -1,73 +1,62 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import TaskConfig from '@/views/TaskConfig.vue'
-import TaskList from '@/views/TaskList.vue'
-import Templates from '@/views/Templates.vue'
-import Settings from '@/views/Settings.vue'
-import DataClean from '@/views/DataClean.vue'
-import SelectorTester from '@/views/SelectorTester.vue'
-import Screenshot from '@/views/Screenshot.vue'
-import UrlAnalyzer from '@/views/UrlAnalyzer.vue'
-import BrowserInfo from '@/views/BrowserInfo.vue'
-import InterfaceAdapter from '@/views/InterfaceAdapter.vue'
-import ServerManager from '@/views/ServerManager.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
       path: '/',
-      name: 'TaskConfig',
-      component: TaskConfig
+      name: 'Dashboard',
+      component: () => import('@/views/Dashboard.vue')
     },
     {
-      path: '/tasks',
-      name: 'TaskList',
-      component: TaskList
+      path: '/powershell',
+      name: 'PowerShell',
+      component: () => import('@/views/PowerShell.vue')
     },
     {
-      path: '/templates',
-      name: 'Templates',
-      component: Templates
+      path: '/registry',
+      name: 'Registry',
+      component: () => import('@/views/Registry.vue')
+    },
+    {
+      path: '/services',
+      name: 'Services',
+      component: () => import('@/views/Services.vue')
+    },
+    {
+      path: '/processes',
+      name: 'Processes',
+      component: () => import('@/views/Processes.vue')
+    },
+    {
+      path: '/network',
+      name: 'Network',
+      component: () => import('@/views/Network.vue')
+    },
+    {
+      path: '/disk',
+      name: 'Disk',
+      component: () => import('@/views/Disk.vue')
+    },
+    {
+      path: '/quick-actions',
+      name: 'QuickActions',
+      component: () => import('@/views/QuickActions.vue')
+    },
+    {
+      path: '/optimization',
+      name: 'Optimization',
+      component: () => import('@/views/Optimization.vue')
+    },
+    {
+      path: '/advanced',
+      name: 'Advanced',
+      component: () => import('@/views/Advanced.vue')
     },
     {
       path: '/settings',
       name: 'Settings',
-      component: Settings
-    },
-    {
-      path: '/clean',
-      name: 'DataClean',
-      component: DataClean
-    },
-    {
-      path: '/selector',
-      name: 'SelectorTester',
-      component: SelectorTester
-    },
-    {
-      path: '/screenshot',
-      name: 'Screenshot',
-      component: Screenshot
-    },
-    {
-      path: '/analyzer',
-      name: 'UrlAnalyzer',
-      component: UrlAnalyzer
-    },
-    {
-      path: '/browser',
-      name: 'BrowserInfo',
-      component: BrowserInfo
-    },
-    {
-      path: '/adapter',
-      name: 'InterfaceAdapter',
-      component: InterfaceAdapter
-    },
-    {
-      path: '/server',
-      name: 'ServerManager',
-      component: ServerManager
+      component: () => import('@/views/Settings.vue')
     }
   ]
 })
