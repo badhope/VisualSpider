@@ -9,7 +9,7 @@
               <div class="header-actions">
                 <el-button type="primary" size="small" @click="showEnvDialog = true">
                   <el-icon><Plus /></el-icon>
-                  添加
+                  {{ $t('common.add') }}
                 </el-button>
                 <el-button size="small" @click="loadEnvVariables">
                   <el-icon><Refresh /></el-icon>
@@ -18,12 +18,12 @@
             </div>
           </template>
           <el-table :data="envVariables" v-loading="loadingEnv" size="small" max-height="400">
-            <el-table-column prop="name" label="变量名" width="200" show-overflow-tooltip />
-            <el-table-column prop="value" label="值" show-overflow-tooltip />
-            <el-table-column label="操作" width="120">
+            <el-table-column prop="name" :label="$t('advanced.varName')" width="200" show-overflow-tooltip />
+            <el-table-column prop="value" :label="$t('registry.value')" show-overflow-tooltip />
+            <el-table-column :label="$t('common.edit')" width="120">
               <template #default="{ row }">
-                <el-button text size="small" @click="editEnv(row)">编辑</el-button>
-                <el-button text size="small" type="danger" @click="deleteEnv(row)">删除</el-button>
+                <el-button text size="small" @click="editEnv(row)">{{ $t('common.edit') }}</el-button>
+                <el-button text size="small" type="danger" @click="deleteEnv(row)">{{ $t('common.delete') }}</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -38,7 +38,7 @@
               <div class="header-actions">
                 <el-button type="primary" size="small" @click="showHostsDialog = true">
                   <el-icon><Plus /></el-icon>
-                  添加
+                  {{ $t('common.add') }}
                 </el-button>
                 <el-button size="small" @click="loadHosts">
                   <el-icon><Refresh /></el-icon>
@@ -47,12 +47,12 @@
             </div>
           </template>
           <el-table :data="hostsEntries" v-loading="loadingHosts" size="small" max-height="400">
-            <el-table-column prop="ip" label="IP地址" width="150" />
-            <el-table-column prop="hostname" label="主机名" show-overflow-tooltip />
-            <el-table-column label="操作" width="120">
+            <el-table-column prop="ip" :label="$t('advanced.ipAddress')" width="150" />
+            <el-table-column prop="hostname" :label="$t('advanced.hostname')" show-overflow-tooltip />
+            <el-table-column :label="$t('common.edit')" width="120">
               <template #default="{ row }">
-                <el-button text size="small" @click="editHost(row)">编辑</el-button>
-                <el-button text size="small" type="danger" @click="deleteHost(row)">删除</el-button>
+                <el-button text size="small" @click="editHost(row)">{{ $t('common.edit') }}</el-button>
+                <el-button text size="small" type="danger" @click="deleteHost(row)">{{ $t('common.delete') }}</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -65,7 +65,7 @@
         <el-card>
           <template #header>
             <div class="card-header">
-              <span>系统工具</span>
+              <span>{{ $t('advanced.systemTools') }}</span>
             </div>
           </template>
           <div class="system-tools">
@@ -79,46 +79,46 @@
             </el-button>
             <el-button type="warning" @click="checkWindowsUpdate">
               <el-icon><Upload /></el-icon>
-              检查更新
+              {{ $t('advanced.checkUpdates') }}
             </el-button>
           </div>
         </el-card>
       </el-col>
     </el-row>
     
-    <el-dialog v-model="showEnvDialog" title="编辑环境变量" width="500px">
+    <el-dialog v-model="showEnvDialog" :title="$t('advanced.editEnvVar')" width="500px">
       <el-form :model="envForm" label-width="100px">
-        <el-form-item label="变量名">
+        <el-form-item :label="$t('advanced.varName')">
           <el-input v-model="envForm.name" />
         </el-form-item>
-        <el-form-item label="变量值">
+        <el-form-item :label="$t('advanced.varValue')">
           <el-input v-model="envForm.value" type="textarea" :rows="3" />
         </el-form-item>
-        <el-form-item label="作用域">
+        <el-form-item :label="$t('advanced.scope')">
           <el-radio-group v-model="envForm.scope">
-            <el-radio label="user">用户</el-radio>
-            <el-radio label="system">系统</el-radio>
+            <el-radio label="user">{{ $t('advanced.user') }}</el-radio>
+            <el-radio label="system">{{ $t('advanced.system') }}</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showEnvDialog = false">取消</el-button>
-        <el-button type="primary" @click="saveEnv">保存</el-button>
+        <el-button @click="showEnvDialog = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="saveEnv">{{ $t('common.save') }}</el-button>
       </template>
     </el-dialog>
     
-    <el-dialog v-model="showHostsDialog" title="编辑Hosts条目" width="500px">
+    <el-dialog v-model="showHostsDialog" :title="$t('advanced.editHostsEntry')" width="500px">
       <el-form :model="hostsForm" label-width="100px">
-        <el-form-item label="IP地址">
-          <el-input v-model="hostsForm.ip" placeholder="例如: 127.0.0.1" />
+        <el-form-item :label="$t('advanced.ipAddress')">
+          <el-input v-model="hostsForm.ip" :placeholder="$t('advanced.ipExample')" />
         </el-form-item>
-        <el-form-item label="主机名">
-          <el-input v-model="hostsForm.hostname" placeholder="例如: localhost" />
+        <el-form-item :label="$t('advanced.hostname')">
+          <el-input v-model="hostsForm.hostname" :placeholder="$t('advanced.hostnameExample')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showHostsDialog = false">取消</el-button>
-        <el-button type="primary" @click="saveHost">保存</el-button>
+        <el-button @click="showHostsDialog = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="saveHost">{{ $t('common.save') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -129,9 +129,9 @@ import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, DocumentChecked, Tools, Upload } from '@element-plus/icons-vue'
-import { useAppStore } from '@/stores'
+import { useI18n } from 'vue-i18n'
 
-const appStore = useAppStore()
+const { t } = useI18n()
 const loadingEnv = ref(false)
 const loadingHosts = ref(false)
 const showEnvDialog = ref(false)
@@ -146,10 +146,10 @@ const hostsForm = ref({ ip: '', hostname: '' })
 async function loadEnvVariables() {
   loadingEnv.value = true
   try {
-    const result = await invoke('get_env_variables')
+    const result = await invoke('get_env_variables') as Array<{ name: string; value: string; scope: string }>
     envVariables.value = result
   } catch (error) {
-    ElMessage.error(`加载环境变量失败: ${error}`)
+    ElMessage.error(t('advanced.loadEnvFailed') + `: ${error}`)
   } finally {
     loadingEnv.value = false
   }
@@ -158,10 +158,10 @@ async function loadEnvVariables() {
 async function loadHosts() {
   loadingHosts.value = true
   try {
-    const result = await invoke('get_hosts_entries')
+    const result = await invoke('get_hosts_entries') as Array<{ ip: string; hostname: string }>
     hostsEntries.value = result
   } catch (error) {
-    ElMessage.error(`加载Hosts失败: ${error}`)
+    ElMessage.error(t('advanced.loadHostsFailed') + `: ${error}`)
   } finally {
     loadingHosts.value = false
   }
@@ -173,24 +173,24 @@ function editEnv(row: any) {
 }
 
 async function deleteEnv(row: any) {
-  await ElMessageBox.confirm(`确定删除环境变量 ${row.name}？`, '确认', { type: 'warning' })
+  await ElMessageBox.confirm(t('advanced.confirmDeleteEnv', { name: row.name }), t('common.confirm'), { type: 'warning' })
   try {
     await invoke('delete_env_variable', { name: row.name, scope: row.scope || 'user' })
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.deleteSuccess'))
     await loadEnvVariables()
   } catch (error) {
-    ElMessage.error(`删除失败: ${error}`)
+    ElMessage.error(t('common.deleteFailed') + `: ${error}`)
   }
 }
 
 async function saveEnv() {
   try {
     await invoke('set_env_variable', envForm.value)
-    ElMessage.success('保存成功')
+    ElMessage.success(t('common.saveSuccess'))
     showEnvDialog.value = false
     await loadEnvVariables()
   } catch (error) {
-    ElMessage.error(`保存失败: ${error}`)
+    ElMessage.error(t('common.saveFailed') + `: ${error}`)
   }
 }
 
@@ -200,53 +200,53 @@ function editHost(row: any) {
 }
 
 async function deleteHost(row: any) {
-  await ElMessageBox.confirm(`确定删除 ${row.ip} ${row.hostname}？`, '确认', { type: 'warning' })
+  await ElMessageBox.confirm(t('advanced.confirmDeleteHost', { ip: row.ip, hostname: row.hostname }), t('common.confirm'), { type: 'warning' })
   try {
     await invoke('delete_hosts_entry', { ip: row.ip, hostname: row.hostname })
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.deleteSuccess'))
     await loadHosts()
   } catch (error) {
-    ElMessage.error(`删除失败: ${error}`)
+    ElMessage.error(t('common.deleteFailed') + `: ${error}`)
   }
 }
 
 async function saveHost() {
   try {
     await invoke('add_hosts_entry', hostsForm.value)
-    ElMessage.success('保存成功')
+    ElMessage.success(t('common.saveSuccess'))
     showHostsDialog.value = false
     await loadHosts()
   } catch (error) {
-    ElMessage.error(`保存失败: ${error}`)
+    ElMessage.error(t('common.saveFailed') + `: ${error}`)
   }
 }
 
 async function runSfc() {
   try {
-    ElMessage.info('正在运行系统文件检查，请稍候...')
+    ElMessage.info(t('advanced.runningSfc'))
     await invoke('run_sfc_scan')
-    ElMessage.success('系统文件检查完成')
+    ElMessage.success(t('advanced.sfcComplete'))
   } catch (error) {
-    ElMessage.error(`运行失败: ${error}`)
+    ElMessage.error(t('advanced.runFailed') + `: ${error}`)
   }
 }
 
 async function runDism() {
   try {
-    ElMessage.info('正在运行DISM，请稍候...')
+    ElMessage.info(t('advanced.runningDism'))
     await invoke('run_dism')
-    ElMessage.success('DISM运行完成')
+    ElMessage.success(t('advanced.dismComplete'))
   } catch (error) {
-    ElMessage.error(`运行失败: ${error}`)
+    ElMessage.error(t('advanced.runFailed') + `: ${error}`)
   }
 }
 
 async function checkWindowsUpdate() {
   try {
     await invoke('check_windows_update')
-    ElMessage.success('已打开Windows更新')
+    ElMessage.success(t('advanced.windowsUpdateOpened'))
   } catch (error) {
-    ElMessage.error(`操作失败: ${error}`)
+    ElMessage.error(t('advanced.operationFailed') + `: ${error}`)
   }
 }
 

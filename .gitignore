@@ -86,3 +86,7 @@ screenshots/
 # Uploaded files
 uploads/
 data/
+
+# Tauri / Rust
+src-tauri/target/
+Cargo.lock

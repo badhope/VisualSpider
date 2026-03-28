@@ -19,7 +19,7 @@
         </el-menu-item>
         
         <el-menu-item index="/powershell">
-          <el-icon><Terminal /></el-icon>
+          <el-icon><SetUp /></el-icon>
           <template #title>{{ $t('nav.powershell') }}</template>
         </el-menu-item>
         
@@ -74,6 +74,11 @@
           <el-menu-item index="/settings">
             <el-icon><Operation /></el-icon>
             <template #title>{{ $t('nav.settings') }}</template>
+          </el-menu-item>
+          
+          <el-menu-item index="/logs">
+            <el-icon><Document /></el-icon>
+            <template #title>操作日志</template>
           </el-menu-item>
         </el-menu>
         <el-button 
@@ -139,9 +144,9 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import {
-  Tools, HomeFilled, Terminal, Collection, Service, DataLine,
+  Tools, HomeFilled, SetUp, Collection, Service, DataLine,
   Connection, FolderOpened, Position, TrendCharts, Setting,
-  Operation, Bell, SuccessFilled, WarningFilled, CircleCloseFilled, InfoFilled
+  Operation, Bell, SuccessFilled, WarningFilled, CircleCloseFilled, InfoFilled, Document
 } from '@element-plus/icons-vue'
 
 const { t } = useI18n()

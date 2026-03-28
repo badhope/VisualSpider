@@ -3,16 +3,14 @@ use std::process::Command;
 use std::env;
 
 pub fn get_system_info() -> Result<SystemInfo, String> {
-    let os_name = env::consts::OS.to_string();
+    let os_name = "Windows".to_string();
     let os_version = get_os_version().unwrap_or_else(|_| "Unknown".to_string());
-    let computer_name = hostname::get()
-        .map(|h| h.to_string_lossy().to_string())
-        .unwrap_or_else(|_| "Unknown".to_string());
-    let user_name = whoami::username();
+    let computer_name = get_computer_name();
+    let user_name = get_user_name();
     let cpu = get_cpu_info().unwrap_or_else(|_| "Unknown".to_string());
     let ram = get_total_memory().unwrap_or(0);
     let architecture = env::consts::ARCH.to_string();
-    let os_build = "".to_string();
+    let os_build = get_os_build().unwrap_or_else(|_| "".to_string());
 
     Ok(SystemInfo {
         os_name,
@@ -26,41 +24,79 @@ pub fn get_system_info() -> Result<SystemInfo, String> {
     })
 }
 
-fn get_os_version() -> Result<String, String> {
-    let output = Command::new("cmd")
-        .args(["/C", "wmic os get Caption /value"])
-        .output()
-        .map_err(|e| e.to_string())?;
+fn get_computer_name() -> String {
+    env::var("COMPUTERNAME").unwrap_or_else(|_| "Unknown".to_string())
+}
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    for line in stdout.lines() {
-        if line.starts_with("Caption=") {
-            return Ok(line.replace("Caption=", "").trim().to_string());
-        }
+fn get_user_name() -> String {
+    env::var("USERNAME").unwrap_or_else(|_| "Unknown".to_string())
+}
+
+fn get_os_version() -> Result<String, String> {
+    let output = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-Command",
+            "(Get-CimInstance Win32_OperatingSystem).Caption"
+        ])
+        .output()
+        .map_err(|e| format!("Failed to get OS version: {}", e))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if stdout.is_empty() {
+        return Ok("Unknown".to_string());
     }
-    Ok("Unknown".to_string())
+    Ok(stdout)
+}
+
+fn get_os_build() -> Result<String, String> {
+    let output = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-Command",
+            "(Get-CimInstance Win32_OperatingSystem).BuildNumber"
+        ])
+        .output()
+        .map_err(|e| format!("Failed to get OS build: {}", e))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    Ok(stdout)
 }
 
 fn get_cpu_info() -> Result<String, String> {
-    let output = Command::new("cmd")
-        .args(["/C", "wmic cpu get Name /value"])
+    let output = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-Command",
+            "(Get-CimInstance Win32_Processor).Name"
+        ])
         .output()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| format!("Failed to get CPU info: {}", e))?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    for line in stdout.lines() {
-        if line.starts_with("Name=") {
-            return Ok(line.replace("Name=", "").trim().to_string());
-        }
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if stdout.is_empty() {
+        return Ok("Unknown".to_string());
     }
-    Ok("Unknown".to_string())
+    Ok(stdout)
 }
 
 fn get_total_memory() -> Result<u64, String> {
-    use sysinfo::System;
-    let mut sys = System::new_all();
-    sys.refresh_all();
-    Ok(sys.total_memory() * 1024)
+    let output = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-Command",
+            "(Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory"
+        ])
+        .output()
+        .map_err(|e| format!("Failed to get total memory: {}", e))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let memory: u64 = stdout.parse().unwrap_or(0);
+    Ok(memory)
 }
 
 pub fn execute_powershell(command: &str) -> Result<CommandResult, String> {
@@ -272,16 +308,4 @@ pub fn run_dism() -> Result<(), String> {
 pub fn check_windows_update() -> Result<(), String> {
     open_system_tool("ms-settings:windowsupdate")?;
     Ok(())
-}
-
-mod whoami {
-    pub fn username() -> String {
-        std::env::var("USERNAME").unwrap_or_else(|_| "Unknown".to_string())
-    }
-}
-
-mod hostname {
-    pub fn get() -> Result<std::ffi::OsString, ()> {
-        Ok(std::env::var("COMPUTERNAME").unwrap_or_else(|_| "Unknown".to_string()).into())
-    }
 }

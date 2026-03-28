@@ -43,11 +43,11 @@
             </div>
           </template>
           <el-table :data="connections" v-loading="loadingConnections" max-height="400" size="small">
-            <el-table-column prop="protocol" label="协议" width="80" />
-            <el-table-column prop="localAddress" label="本地地址" width="150" />
-            <el-table-column prop="localPort" label="本地端口" width="80" />
-            <el-table-column prop="remoteAddress" label="远程地址" width="150" />
-            <el-table-column prop="state" label="状态" show-overflow-tooltip />
+            <el-table-column prop="protocol" :label="$t('network.protocol')" width="80" />
+            <el-table-column prop="localAddress" :label="$t('network.localAddress')" width="150" />
+            <el-table-column prop="localPort" :label="$t('network.localPort')" width="80" />
+            <el-table-column prop="remoteAddress" :label="$t('network.remoteAddress')" width="150" />
+            <el-table-column prop="state" :label="$t('network.state')" show-overflow-tooltip />
           </el-table>
         </el-card>
       </el-col>
@@ -63,10 +63,10 @@
             </div>
           </template>
           <el-table :data="ports" v-loading="loadingPorts" max-height="400" size="small">
-            <el-table-column prop="port" label="端口" width="80" />
-            <el-table-column prop="processName" label="进程名" width="150" />
+            <el-table-column prop="port" :label="$t('network.port')" width="80" />
+            <el-table-column prop="processName" :label="$t('network.processName')" width="150" />
             <el-table-column prop="pid" label="PID" width="80" />
-            <el-table-column prop="protocol" label="协议" />
+            <el-table-column prop="protocol" :label="$t('network.protocol')" />
           </el-table>
         </el-card>
       </el-col>
@@ -82,7 +82,7 @@
           </template>
           <div class="dns-info">
             <el-descriptions :column="2" border>
-              <el-descriptions-item label="DNS服务器">
+              <el-descriptions-item :label="$t('network.dnsServer')">
                 <div v-for="(dns, index) in dnsServers" :key="index">{{ dns }}</div>
               </el-descriptions-item>
             </el-descriptions>
@@ -98,8 +98,10 @@ import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { ElMessage } from 'element-plus'
 import { Refresh, SwitchButton, Connection, Setting } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import type { NetworkConnection } from '@/types'
 
+const { t } = useI18n()
 const loadingConnections = ref(false)
 const loadingPorts = ref(false)
 const connections = ref<NetworkConnection[]>([])
@@ -112,7 +114,7 @@ async function loadConnections() {
     const result = await invoke<NetworkConnection[]>('get_network_connections')
     connections.value = result
   } catch (error) {
-    ElMessage.error(`加载网络连接失败: ${error}`)
+    ElMessage.error(t('network.loadConnectionsFailed') + `: ${error}`)
   } finally {
     loadingConnections.value = false
   }
@@ -121,10 +123,10 @@ async function loadConnections() {
 async function loadPorts() {
   loadingPorts.value = true
   try {
-    const result = await invoke('get_port_usage')
+    const result = await invoke('get_port_usage') as Array<{ port: number; processName: string; pid: number; protocol: string }>
     ports.value = result
   } catch (error) {
-    ElMessage.error(`加载端口信息失败: ${error}`)
+    ElMessage.error(t('network.loadPortsFailed') + `: ${error}`)
   } finally {
     loadingPorts.value = false
   }
@@ -135,43 +137,43 @@ async function loadDnsServers() {
     const result = await invoke<string[]>('get_dns_servers')
     dnsServers.value = result
   } catch (error) {
-    console.error('加载DNS服务器失败:', error)
+    console.error(t('network.loadDnsFailed') + ':', error)
   }
 }
 
 async function flushDns() {
   try {
     await invoke('flush_dns')
-    ElMessage.success('DNS缓存已刷新')
+    ElMessage.success(t('network.flushDnsSuccess'))
   } catch (error) {
-    ElMessage.error(`刷新DNS失败: ${error}`)
+    ElMessage.error(t('network.flushDnsFailed') + `: ${error}`)
   }
 }
 
 async function releaseIp() {
   try {
     await invoke('release_ip')
-    ElMessage.success('IP已释放')
+    ElMessage.success(t('network.releaseIpSuccess'))
   } catch (error) {
-    ElMessage.error(`释放IP失败: ${error}`)
+    ElMessage.error(t('network.releaseIpFailed') + `: ${error}`)
   }
 }
 
 async function renewIp() {
   try {
     await invoke('renew_ip')
-    ElMessage.success('IP已更新')
+    ElMessage.success(t('network.renewIpSuccess'))
   } catch (error) {
-    ElMessage.error(`更新IP失败: ${error}`)
+    ElMessage.error(t('network.renewIpFailed') + `: ${error}`)
   }
 }
 
 async function resetNetwork() {
   try {
     await invoke('reset_network')
-    ElMessage.success('网络已重置')
+    ElMessage.success(t('network.resetNetworkSuccess'))
   } catch (error) {
-    ElMessage.error(`重置网络失败: ${error}`)
+    ElMessage.error(t('network.resetNetworkFailed') + `: ${error}`)
   }
 }
 

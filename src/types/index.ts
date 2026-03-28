@@ -21,6 +21,12 @@ export interface RegistryKey {
   children?: RegistryKey[]
 }
 
+export interface RegistryValue {
+  name: string
+  value_type: string
+  value: string | number
+}
+
 export interface SystemService {
   name: string
   displayName: string
@@ -37,7 +43,12 @@ export interface ProcessInfo {
   memory: number
   path: string
   user: string
-  priority: number
+  priority: string
+  threads?: number
+  handles?: number
+  startTime?: string
+  runTime?: string
+  commandLine?: string
 }
 
 export interface NetworkConnection {
@@ -84,20 +95,35 @@ export interface QuickAction {
 export interface AppSettings {
   general: {
     theme: 'light' | 'dark' | 'auto'
-    language: 'zh-CN' | 'en-US'
+    language: 'zh-CN' | 'en'
     autoStart: boolean
     minimizeToTray: boolean
     confirmDangerousActions: boolean
+    showNotifications: boolean
+    startMinimized: boolean
   }
   powershell: {
     defaultTimeout: number
     saveHistory: boolean
     maxHistoryItems: number
+    executionPolicy: string
+    outputFontSize: number
   }
   registry: {
     showHiddenKeys: boolean
     confirmDeletes: boolean
     autoRefresh: boolean
+  }
+  process: {
+    autoRefresh: boolean
+    refreshInterval: number
+    showSystemProcesses: boolean
+    highCpuThreshold: number
+    highMemoryThreshold: number
+  }
+  data: {
+    autoBackup: boolean
+    backupInterval: string
   }
 }
 

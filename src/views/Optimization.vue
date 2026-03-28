@@ -12,10 +12,10 @@
             </div>
           </template>
           <el-table :data="startupItems" v-loading="loadingStartup" size="small">
-            <el-table-column prop="name" label="名称" show-overflow-tooltip />
-            <el-table-column prop="command" label="命令" show-overflow-tooltip />
-            <el-table-column prop="location" label="位置" show-overflow-tooltip />
-            <el-table-column label="操作" width="100">
+            <el-table-column prop="name" :label="$t('registry.name')" show-overflow-tooltip />
+            <el-table-column prop="command" :label="$t('powershell.commandInput')" show-overflow-tooltip />
+            <el-table-column prop="location" :label="$t('registry.value')" show-overflow-tooltip />
+            <el-table-column :label="$t('common.edit')" width="100">
               <template #default="{ row }">
                 <el-switch v-model="row.enabled" @change="toggleStartupItem(row)" />
               </template>
@@ -42,14 +42,14 @@
             </el-button>
             <el-button type="warning" @click="optimizePerformance">
               <el-icon><TrendCharts /></el-icon>
-              性能优化
+              {{ $t('optimization.optimizePerformance') }}
             </el-button>
           </div>
           
           <el-divider />
           
           <div class="performance-tips">
-            <h4>优化建议</h4>
+            <h4>{{ $t('optimization.optimizationTips') }}</h4>
             <el-alert
               v-for="(tip, index) in performanceTips"
               :key="index"
@@ -75,18 +75,18 @@
             </div>
           </template>
           <el-table :data="scheduledTasks" v-loading="loadingTasks" size="small">
-            <el-table-column prop="name" label="任务名称" show-overflow-tooltip />
-            <el-table-column prop="status" label="状态" width="100">
+            <el-table-column prop="name" :label="$t('optimization.taskName')" show-overflow-tooltip />
+            <el-table-column prop="status" :label="$t('services.status')" width="100">
               <template #default="{ row }">
                 <el-tag :type="row.status === 'Ready' ? 'success' : 'info'">{{ row.status }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="lastRun" label="上次运行" width="180" />
-            <el-table-column prop="nextRun" label="下次运行" width="180" />
-            <el-table-column label="操作" width="150">
+            <el-table-column prop="lastRun" :label="$t('optimization.lastRun')" width="180" />
+            <el-table-column prop="nextRun" :label="$t('optimization.nextRun')" width="180" />
+            <el-table-column :label="$t('common.edit')" width="150">
               <template #default="{ row }">
-                <el-button text size="small" @click="runTask(row.name)">运行</el-button>
-                <el-button text size="small" @click="disableTask(row.name)">禁用</el-button>
+                <el-button text size="small" @click="runTask(row.name)">{{ $t('optimization.run') }}</el-button>
+                <el-button text size="small" @click="disableTask(row.name)">{{ $t('optimization.disable') }}</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -101,24 +101,26 @@ import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { ElMessage } from 'element-plus'
 import { Refresh, Delete, Brush, TrendCharts } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const loadingStartup = ref(false)
 const loadingTasks = ref(false)
 const startupItems = ref<Array<{ name: string; command: string; location: string; enabled: boolean }>>([])
 const scheduledTasks = ref<Array<{ name: string; status: string; lastRun: string; nextRun: string }>>([])
 const performanceTips = ref([
-  '禁用不必要的启动项可以加快系统启动速度',
-  '定期清理临时文件可以释放磁盘空间',
-  '关闭不必要的后台服务可以节省系统资源'
+  t('optimization.tip1'),
+  t('optimization.tip2'),
+  t('optimization.tip3')
 ])
 
 async function loadStartupItems() {
   loadingStartup.value = true
   try {
-    const result = await invoke('get_startup_items')
+    const result = await invoke('get_startup_items') as Array<{ name: string; command: string; location: string; enabled: boolean }>
     startupItems.value = result
   } catch (error) {
-    ElMessage.error(`加载启动项失败: ${error}`)
+    ElMessage.error(t('optimization.loadStartupFailed') + `: ${error}`)
   } finally {
     loadingStartup.value = false
   }
@@ -127,9 +129,9 @@ async function loadStartupItems() {
 async function toggleStartupItem(item: any) {
   try {
     await invoke('toggle_startup_item', { name: item.name, enabled: item.enabled })
-    ElMessage.success(item.enabled ? '已启用' : '已禁用')
+    ElMessage.success(item.enabled ? t('optimization.enabled') : t('optimization.disabled'))
   } catch (error) {
-    ElMessage.error(`操作失败: ${error}`)
+    ElMessage.error(t('optimization.operationFailed') + `: ${error}`)
     item.enabled = !item.enabled
   }
 }
@@ -137,10 +139,10 @@ async function toggleStartupItem(item: any) {
 async function loadScheduledTasks() {
   loadingTasks.value = true
   try {
-    const result = await invoke('get_scheduled_tasks')
+    const result = await invoke('get_scheduled_tasks') as Array<{ name: string; status: string; lastRun: string; nextRun: string }>
     scheduledTasks.value = result
   } catch (error) {
-    ElMessage.error(`加载计划任务失败: ${error}`)
+    ElMessage.error(t('optimization.loadTasksFailed') + `: ${error}`)
   } finally {
     loadingTasks.value = false
   }
@@ -149,46 +151,46 @@ async function loadScheduledTasks() {
 async function runTask(name: string) {
   try {
     await invoke('run_scheduled_task', { name })
-    ElMessage.success(`任务 ${name} 已启动`)
+    ElMessage.success(t('optimization.taskStarted', { name }))
   } catch (error) {
-    ElMessage.error(`运行任务失败: ${error}`)
+    ElMessage.error(t('optimization.runTaskFailed') + `: ${error}`)
   }
 }
 
 async function disableTask(name: string) {
   try {
     await invoke('disable_scheduled_task', { name })
-    ElMessage.success(`任务 ${name} 已禁用`)
+    ElMessage.success(t('optimization.taskDisabled', { name }))
     await loadScheduledTasks()
   } catch (error) {
-    ElMessage.error(`禁用任务失败: ${error}`)
+    ElMessage.error(t('optimization.disableTaskFailed') + `: ${error}`)
   }
 }
 
 async function cleanTemp() {
   try {
     const result = await invoke<{ deleted: number; freed: number }>('clean_temp_files')
-    ElMessage.success(`已清理 ${result.deleted} 个文件，释放 ${formatBytes(result.freed)} 空间`)
+    ElMessage.success(t('optimization.cleanSuccess', { count: result.deleted, size: formatBytes(result.freed) }))
   } catch (error) {
-    ElMessage.error(`清理失败: ${error}`)
+    ElMessage.error(t('optimization.cleanFailed') + `: ${error}`)
   }
 }
 
 async function cleanCache() {
   try {
     const result = await invoke<{ deleted: number; freed: number }>('clean_cache_files')
-    ElMessage.success(`已清理 ${result.deleted} 个文件，释放 ${formatBytes(result.freed)} 空间`)
+    ElMessage.success(t('optimization.cleanSuccess', { count: result.deleted, size: formatBytes(result.freed) }))
   } catch (error) {
-    ElMessage.error(`清理失败: ${error}`)
+    ElMessage.error(t('optimization.cleanFailed') + `: ${error}`)
   }
 }
 
 async function optimizePerformance() {
   try {
     await invoke('optimize_performance')
-    ElMessage.success('性能优化完成')
+    ElMessage.success(t('optimization.optimizeSuccess'))
   } catch (error) {
-    ElMessage.error(`优化失败: ${error}`)
+    ElMessage.error(t('optimization.optimizeFailed') + `: ${error}`)
   }
 }
 

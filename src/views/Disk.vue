@@ -64,8 +64,10 @@ import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { ElMessage } from 'element-plus'
 import { Refresh, FolderOpened } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import type { DiskInfo } from '@/types'
 
+const { t } = useI18n()
 const loading = ref(false)
 const disks = ref<DiskInfo[]>([])
 
@@ -89,7 +91,7 @@ async function loadDisks() {
     const result = await invoke<DiskInfo[]>('get_disk_info')
     disks.value = result
   } catch (error) {
-    ElMessage.error(`加载磁盘信息失败: ${error}`)
+    ElMessage.error(t('disk.loadFailed') + `: ${error}`)
   } finally {
     loading.value = false
   }
@@ -98,19 +100,19 @@ async function loadDisks() {
 async function cleanupDisk(drive: string) {
   try {
     await invoke('cleanup_disk', { drive })
-    ElMessage.success(`磁盘 ${drive} 清理完成`)
+    ElMessage.success(t('disk.cleanupSuccess', { drive }))
     await loadDisks()
   } catch (error) {
-    ElMessage.error(`磁盘清理失败: ${error}`)
+    ElMessage.error(t('disk.cleanupFailed') + `: ${error}`)
   }
 }
 
 async function checkDisk(drive: string) {
   try {
     await invoke('check_disk', { drive })
-    ElMessage.success(`磁盘 ${drive} 检查完成`)
+    ElMessage.success(t('disk.checkSuccess', { drive }))
   } catch (error) {
-    ElMessage.error(`磁盘检查失败: ${error}`)
+    ElMessage.error(t('disk.checkFailed') + `: ${error}`)
   }
 }
 

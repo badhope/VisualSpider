@@ -38,9 +38,9 @@ pub fn get_services() -> Result<Vec<ServiceInfo>, String> {
 
 fn format_start_type(value: &serde_json::Value) -> String {
     match value.as_i64() {
-        2 => "Automatic".to_string(),
-        3 => "Manual".to_string(),
-        4 => "Disabled".to_string(),
+        Some(2) => "Automatic".to_string(),
+        Some(3) => "Manual".to_string(),
+        Some(4) => "Disabled".to_string(),
         _ => value.as_str().unwrap_or("Unknown").to_string(),
     }
 }

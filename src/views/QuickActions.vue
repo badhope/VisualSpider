@@ -12,7 +12,7 @@
           <el-card class="action-card" shadow="hover" @click="executeAction(action)">
             <div class="action-icon">
               <el-icon size="32">
-                <component :is="action.icon" />
+                <component :is="iconMap[action.icon]" />
               </el-icon>
             </div>
             <div class="action-name">{{ action.name }}</div>
@@ -33,31 +33,39 @@ import { invoke } from '@tauri-apps/api/core'
 import { ElMessage } from 'element-plus'
 import { 
   Setting, Monitor, Cpu, Collection, Document, 
-  Tickets, DataBoard, Terminal, Grid, Tools
+  Tickets, DataBoard, Grid, Tools
 } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import type { QuickAction } from '@/types'
 
+const { t } = useI18n()
+
+const iconMap: Record<string, any> = {
+  Setting, Monitor, Cpu, Collection, Document, 
+  Tickets, DataBoard, Grid, Tools
+}
+
 const quickActions = ref<QuickAction[]>([
-  { id: '1', name: '控制面板', description: '打开Windows控制面板', icon: 'Setting', command: 'control', category: 'system', requiresAdmin: false },
-  { id: '2', name: '设备管理器', description: '管理计算机硬件设备', icon: 'Monitor', command: 'devmgmt.msc', category: 'system', requiresAdmin: false },
-  { id: '3', name: '任务管理器', description: '查看和管理运行中的程序', icon: 'Cpu', command: 'taskmgr', category: 'system', requiresAdmin: false },
-  { id: '4', name: '注册表编辑器', description: '编辑Windows注册表', icon: 'Collection', command: 'regedit', category: 'system', requiresAdmin: true },
-  { id: '5', name: '组策略', description: '配置系统和用户策略', icon: 'Document', command: 'gpedit.msc', category: 'system', requiresAdmin: true },
-  { id: '6', name: '事件查看器', description: '查看系统和应用程序日志', icon: 'Tickets', command: 'eventvwr.msc', category: 'system', requiresAdmin: false },
-  { id: '7', name: '系统信息', description: '查看详细的系统信息', icon: 'DataBoard', command: 'msinfo32', category: 'system', requiresAdmin: false },
-  { id: '8', name: '命令提示符', description: '打开CMD命令行', icon: 'Terminal', command: 'cmd', category: 'system', requiresAdmin: false },
-  { id: '9', name: 'PowerShell', description: '打开PowerShell', icon: 'Grid', command: 'powershell', category: 'system', requiresAdmin: false },
-  { id: '10', name: '服务管理', description: '管理Windows服务', icon: 'Tools', command: 'services.msc', category: 'system', requiresAdmin: true },
-  { id: '11', name: '计算机管理', description: '打开计算机管理控制台', icon: 'Monitor', command: 'compmgmt.msc', category: 'system', requiresAdmin: true },
-  { id: '12', name: '磁盘管理', description: '管理磁盘分区', icon: 'Setting', command: 'diskmgmt.msc', category: 'system', requiresAdmin: true }
+  { id: '1', name: t('quickActions.controlPanel'), description: t('quickActions.controlPanelDesc'), icon: 'Setting', command: 'control', category: 'system', requiresAdmin: false },
+  { id: '2', name: t('quickActions.deviceManager'), description: t('quickActions.deviceManagerDesc'), icon: 'Monitor', command: 'devmgmt.msc', category: 'system', requiresAdmin: false },
+  { id: '3', name: t('quickActions.taskManager'), description: t('quickActions.taskManagerDesc'), icon: 'Cpu', command: 'taskmgr', category: 'system', requiresAdmin: false },
+  { id: '4', name: t('quickActions.registryEditor'), description: t('quickActions.registryEditorDesc'), icon: 'Collection', command: 'regedit', category: 'system', requiresAdmin: true },
+  { id: '5', name: t('quickActions.groupPolicy'), description: t('quickActions.groupPolicyDesc'), icon: 'Document', command: 'gpedit.msc', category: 'system', requiresAdmin: true },
+  { id: '6', name: t('quickActions.eventViewer'), description: t('quickActions.eventViewerDesc'), icon: 'Tickets', command: 'eventvwr.msc', category: 'system', requiresAdmin: false },
+  { id: '7', name: t('quickActions.systemInfo'), description: t('quickActions.systemInfoDesc'), icon: 'DataBoard', command: 'msinfo32', category: 'system', requiresAdmin: false },
+  { id: '8', name: t('quickActions.cmd'), description: t('quickActions.cmdDesc'), icon: 'Grid', command: 'cmd', category: 'system', requiresAdmin: false },
+  { id: '9', name: t('quickActions.powershell'), description: t('quickActions.powershellDesc'), icon: 'Grid', command: 'powershell', category: 'system', requiresAdmin: false },
+  { id: '10', name: t('quickActions.serviceManager'), description: t('quickActions.serviceManagerDesc'), icon: 'Tools', command: 'services.msc', category: 'system', requiresAdmin: true },
+  { id: '11', name: t('quickActions.computerManagement'), description: t('quickActions.computerManagementDesc'), icon: 'Monitor', command: 'compmgmt.msc', category: 'system', requiresAdmin: true },
+  { id: '12', name: t('quickActions.diskManagement'), description: t('quickActions.diskManagementDesc'), icon: 'Setting', command: 'diskmgmt.msc', category: 'system', requiresAdmin: true }
 ])
 
 async function executeAction(action: QuickAction) {
   try {
     await invoke('open_system_tool', { command: action.command })
-    ElMessage.success(`已打开 ${action.name}`)
+    ElMessage.success(t('quickActions.openSuccess', { name: action.name }))
   } catch (error) {
-    ElMessage.error(`打开失败: ${error}`)
+    ElMessage.error(t('quickActions.openFailed') + `: ${error}`)
   }
 }
 </script>

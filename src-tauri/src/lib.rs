@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use tauri::command;
 
 mod system;
@@ -10,6 +9,7 @@ mod network;
 mod disk;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CommandResult {
     pub success: bool,
     pub output: String,
@@ -18,6 +18,7 @@ pub struct CommandResult {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SystemInfo {
     pub os_name: String,
     pub os_version: String,
@@ -30,6 +31,7 @@ pub struct SystemInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RegistryValue {
     pub name: String,
     pub value_type: String,
@@ -37,6 +39,7 @@ pub struct RegistryValue {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ServiceInfo {
     pub name: String,
     pub display_name: String,
@@ -47,6 +50,7 @@ pub struct ServiceInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProcessInfo {
     pub pid: u32,
     pub name: String,
@@ -54,10 +58,16 @@ pub struct ProcessInfo {
     pub memory: u64,
     pub path: String,
     pub user: String,
-    pub priority: u32,
+    pub priority: String,
+    pub threads: u32,
+    pub handles: u32,
+    pub start_time: String,
+    pub run_time: String,
+    pub command_line: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NetworkConnection {
     pub protocol: String,
     pub local_address: String,
@@ -70,6 +80,7 @@ pub struct NetworkConnection {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DiskInfo {
     pub name: String,
     pub total_space: u64,
@@ -80,212 +91,227 @@ pub struct DiskInfo {
 }
 
 #[command]
-pub async fn get_system_info() -> Result<SystemInfo, String> {
+fn get_system_info() -> Result<SystemInfo, String> {
     system::get_system_info()
 }
 
 #[command]
-pub async fn execute_powershell(command: String) -> Result<CommandResult, String> {
+fn execute_powershell(command: String) -> Result<CommandResult, String> {
     system::execute_powershell(&command)
 }
 
 #[command]
-pub async fn open_system_tool(command: String) -> Result<(), String> {
+fn open_system_tool(command: String) -> Result<(), String> {
     system::open_system_tool(&command)
 }
 
 #[command]
-pub async fn get_registry_tree() -> Result<Vec<serde_json::Value>, String> {
+fn get_registry_tree() -> Result<Vec<serde_json::Value>, String> {
     registry::get_registry_tree()
 }
 
 #[command]
-pub async fn get_registry_values(path: String) -> Result<Vec<RegistryValue>, String> {
+fn get_registry_values(path: String) -> Result<Vec<RegistryValue>, String> {
     registry::get_registry_values(&path)
 }
 
 #[command]
-pub async fn set_registry_value(path: String, name: String, value_type: String, value: String) -> Result<(), String> {
+fn set_registry_value(path: String, name: String, value_type: String, value: String) -> Result<(), String> {
     registry::set_registry_value(&path, &name, &value_type, &value)
 }
 
 #[command]
-pub async fn create_registry_value(path: String, name: String, value_type: String, value: String) -> Result<(), String> {
+fn create_registry_value(path: String, name: String, value_type: String, value: String) -> Result<(), String> {
     registry::create_registry_value(&path, &name, &value_type, &value)
 }
 
 #[command]
-pub async fn delete_registry_value(path: String, name: String) -> Result<(), String> {
+fn delete_registry_value(path: String, name: String) -> Result<(), String> {
     registry::delete_registry_value(&path, &name)
 }
 
 #[command]
-pub async fn export_registry_key(path: String) -> Result<String, String> {
+fn export_registry_key(path: String) -> Result<String, String> {
     registry::export_registry_key(&path)
 }
 
 #[command]
-pub async fn get_services() -> Result<Vec<ServiceInfo>, String> {
+fn get_registry_subkeys(path: String) -> Result<Vec<serde_json::Value>, String> {
+    registry::get_registry_subkeys(&path)
+}
+
+#[command]
+fn get_services() -> Result<Vec<ServiceInfo>, String> {
     service::get_services()
 }
 
 #[command]
-pub async fn service_start(name: String) -> Result<(), String> {
+fn service_start(name: String) -> Result<(), String> {
     service::control_service(&name, "start")
 }
 
 #[command]
-pub async fn service_stop(name: String) -> Result<(), String> {
+fn service_stop(name: String) -> Result<(), String> {
     service::control_service(&name, "stop")
 }
 
 #[command]
-pub async fn service_restart(name: String) -> Result<(), String> {
+fn service_restart(name: String) -> Result<(), String> {
     service::control_service(&name, "restart")
 }
 
 #[command]
-pub async fn get_processes() -> Result<Vec<ProcessInfo>, String> {
+fn get_processes() -> Result<Vec<ProcessInfo>, String> {
     process::get_processes()
 }
 
 #[command]
-pub async fn end_process(pid: u32) -> Result<(), String> {
+fn end_process(pid: u32) -> Result<(), String> {
     process::end_process(pid)
 }
 
 #[command]
-pub async fn get_network_connections() -> Result<Vec<NetworkConnection>, String> {
+fn set_process_priority(pid: u32, priority: String) -> Result<(), String> {
+    process::set_process_priority(pid, &priority)
+}
+
+#[command]
+fn open_file_location(path: String) -> Result<(), String> {
+    process::open_file_location(&path)
+}
+
+#[command]
+fn get_network_connections() -> Result<Vec<NetworkConnection>, String> {
     network::get_network_connections()
 }
 
 #[command]
-pub async fn get_port_usage() -> Result<Vec<serde_json::Value>, String> {
+fn get_port_usage() -> Result<Vec<serde_json::Value>, String> {
     network::get_port_usage()
 }
 
 #[command]
-pub async fn get_dns_servers() -> Result<Vec<String>, String> {
+fn get_dns_servers() -> Result<Vec<String>, String> {
     network::get_dns_servers()
 }
 
 #[command]
-pub async fn flush_dns() -> Result<(), String> {
+fn flush_dns() -> Result<(), String> {
     network::flush_dns()
 }
 
 #[command]
-pub async fn release_ip() -> Result<(), String> {
+fn release_ip() -> Result<(), String> {
     network::release_ip()
 }
 
 #[command]
-pub async fn renew_ip() -> Result<(), String> {
+fn renew_ip() -> Result<(), String> {
     network::renew_ip()
 }
 
 #[command]
-pub async fn reset_network() -> Result<(), String> {
+fn reset_network() -> Result<(), String> {
     network::reset_network()
 }
 
 #[command]
-pub async fn get_disk_info() -> Result<Vec<DiskInfo>, String> {
+fn get_disk_info() -> Result<Vec<DiskInfo>, String> {
     disk::get_disk_info()
 }
 
 #[command]
-pub async fn cleanup_disk(drive: String) -> Result<(), String> {
+fn cleanup_disk(drive: String) -> Result<(), String> {
     disk::cleanup_disk(&drive)
 }
 
 #[command]
-pub async fn check_disk(drive: String) -> Result<(), String> {
+fn check_disk(drive: String) -> Result<(), String> {
     disk::check_disk(&drive)
 }
 
 #[command]
-pub async fn get_startup_items() -> Result<Vec<serde_json::Value>, String> {
+fn get_startup_items() -> Result<Vec<serde_json::Value>, String> {
     system::get_startup_items()
 }
 
 #[command]
-pub async fn toggle_startup_item(name: String, enabled: bool) -> Result<(), String> {
+fn toggle_startup_item(name: String, enabled: bool) -> Result<(), String> {
     system::toggle_startup_item(&name, enabled)
 }
 
 #[command]
-pub async fn get_scheduled_tasks() -> Result<Vec<serde_json::Value>, String> {
+fn get_scheduled_tasks() -> Result<Vec<serde_json::Value>, String> {
     system::get_scheduled_tasks()
 }
 
 #[command]
-pub async fn run_scheduled_task(name: String) -> Result<(), String> {
+fn run_scheduled_task(name: String) -> Result<(), String> {
     system::run_scheduled_task(&name)
 }
 
 #[command]
-pub async fn disable_scheduled_task(name: String) -> Result<(), String> {
+fn disable_scheduled_task(name: String) -> Result<(), String> {
     system::disable_scheduled_task(&name)
 }
 
 #[command]
-pub async fn clean_temp_files() -> Result<serde_json::Value, String> {
+fn clean_temp_files() -> Result<serde_json::Value, String> {
     system::clean_temp_files()
 }
 
 #[command]
-pub async fn clean_cache_files() -> Result<serde_json::Value, String> {
+fn clean_cache_files() -> Result<serde_json::Value, String> {
     system::clean_cache_files()
 }
 
 #[command]
-pub async fn optimize_performance() -> Result<(), String> {
+fn optimize_performance() -> Result<(), String> {
     system::optimize_performance()
 }
 
 #[command]
-pub async fn get_env_variables() -> Result<Vec<serde_json::Value>, String> {
+fn get_env_variables() -> Result<Vec<serde_json::Value>, String> {
     system::get_env_variables()
 }
 
 #[command]
-pub async fn set_env_variable(name: String, value: String, scope: String) -> Result<(), String> {
+fn set_env_variable(name: String, value: String, scope: String) -> Result<(), String> {
     system::set_env_variable(&name, &value, &scope)
 }
 
 #[command]
-pub async fn delete_env_variable(name: String, scope: String) -> Result<(), String> {
+fn delete_env_variable(name: String, scope: String) -> Result<(), String> {
     system::delete_env_variable(&name, &scope)
 }
 
 #[command]
-pub async fn get_hosts_entries() -> Result<Vec<serde_json::Value>, String> {
+fn get_hosts_entries() -> Result<Vec<serde_json::Value>, String> {
     system::get_hosts_entries()
 }
 
 #[command]
-pub async fn add_hosts_entry(ip: String, hostname: String) -> Result<(), String> {
+fn add_hosts_entry(ip: String, hostname: String) -> Result<(), String> {
     system::add_hosts_entry(&ip, &hostname)
 }
 
 #[command]
-pub async fn delete_hosts_entry(ip: String, hostname: String) -> Result<(), String> {
+fn delete_hosts_entry(ip: String, hostname: String) -> Result<(), String> {
     system::delete_hosts_entry(&ip, &hostname)
 }
 
 #[command]
-pub async fn run_sfc_scan() -> Result<(), String> {
+fn run_sfc_scan() -> Result<(), String> {
     system::run_sfc_scan()
 }
 
 #[command]
-pub async fn run_dism() -> Result<(), String> {
+fn run_dism() -> Result<(), String> {
     system::run_dism()
 }
 
 #[command]
-pub async fn check_windows_update() -> Result<(), String> {
+fn check_windows_update() -> Result<(), String> {
     system::check_windows_update()
 }
 
@@ -306,12 +332,15 @@ pub fn run() {
             create_registry_value,
             delete_registry_value,
             export_registry_key,
+            get_registry_subkeys,
             get_services,
             service_start,
             service_stop,
             service_restart,
             get_processes,
             end_process,
+            set_process_priority,
+            open_file_location,
             get_network_connections,
             get_port_usage,
             get_dns_servers,

@@ -45,7 +45,7 @@
           </template>
           <div class="quick-buttons">
             <el-button type="primary" @click="$router.push('/powershell')">
-              <el-icon><Terminal /></el-icon>
+              <el-icon><SetUp /></el-icon>
               PowerShell
             </el-button>
             <el-button type="success" @click="$router.push('/registry')">
@@ -95,7 +95,7 @@
               </el-card>
             </el-timeline-item>
           </el-timeline>
-          <el-empty v-if="recentActions.length === 0" description="暂无最近操作" />
+          <el-empty v-if="recentActions.length === 0" :description="$t('dashboard.noRecentActions')" />
         </el-card>
       </el-col>
     </el-row>
@@ -105,7 +105,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { Monitor, Position, Terminal, Collection, Service, DataLine, Connection, FolderOpened, Clock } from '@element-plus/icons-vue'
+import { Monitor, Position, SetUp, Collection, Service, DataLine, Connection, FolderOpened, Clock } from '@element-plus/icons-vue'
 import type { SystemInfo } from '@/types'
 
 const loading = ref(false)

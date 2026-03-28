@@ -1,7 +1,6 @@
 use crate::RegistryValue;
 use winreg::RegKey;
 use winreg::enums::*;
-use std::collections::HashMap;
 
 pub fn get_registry_tree() -> Result<Vec<serde_json::Value>, String> {
     let roots = vec![
@@ -15,7 +14,7 @@ pub fn get_registry_tree() -> Result<Vec<serde_json::Value>, String> {
     let mut tree = Vec::new();
     
     for (name, hkey) in roots {
-        let key = unsafe { RegKey::predef(hkey) };
+        let key = RegKey::predef(hkey);
         let children = get_subkeys(&key, name);
         
         tree.push(serde_json::json!({
@@ -49,7 +48,7 @@ fn get_subkeys(key: &RegKey, path: &str) -> Vec<serde_json::Value> {
 
 pub fn get_registry_values(path: &str) -> Result<Vec<RegistryValue>, String> {
     let (hkey, subpath) = parse_registry_path(path)?;
-    let key = unsafe { RegKey::predef(hkey) };
+    let key = RegKey::predef(hkey);
     
     let key = key.open_subkey_with_flags(subpath, KEY_READ)
         .map_err(|e| format!("Failed to open registry key: {}", e))?;
@@ -122,7 +121,7 @@ pub fn get_registry_values(path: &str) -> Result<Vec<RegistryValue>, String> {
 
 pub fn set_registry_value(path: &str, name: &str, value_type: &str, value: &str) -> Result<(), String> {
     let (hkey, subpath) = parse_registry_path(path)?;
-    let key = unsafe { RegKey::predef(hkey) };
+    let key = RegKey::predef(hkey);
     
     let key = key.open_subkey_with_flags(subpath, KEY_SET_VALUE)
         .map_err(|e| format!("Failed to open registry key: {}", e))?;
@@ -157,7 +156,7 @@ pub fn create_registry_value(path: &str, name: &str, value_type: &str, value: &s
 
 pub fn delete_registry_value(path: &str, name: &str) -> Result<(), String> {
     let (hkey, subpath) = parse_registry_path(path)?;
-    let key = unsafe { RegKey::predef(hkey) };
+    let key = RegKey::predef(hkey);
     
     let key = key.open_subkey_with_flags(subpath, KEY_SET_VALUE)
         .map_err(|e| format!("Failed to open registry key: {}", e))?;
@@ -175,6 +174,26 @@ pub fn export_registry_key(path: &str) -> Result<String, String> {
         .map_err(|e| format!("Failed to export registry: {}", e))?;
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+pub fn get_registry_subkeys(path: &str) -> Result<Vec<serde_json::Value>, String> {
+    let (hkey, subpath) = parse_registry_path(path)?;
+    let key = RegKey::predef(hkey);
+    
+    let key = key.open_subkey_with_flags(subpath, KEY_READ)
+        .map_err(|e| format!("Failed to open registry key: {}", e))?;
+
+    let mut children = Vec::new();
+    
+    for subkey in key.enum_keys().filter_map(|k| k.ok()).take(100) {
+        let child_path = format!("{}\\{}", path, subkey);
+        children.push(serde_json::json!({
+            "name": subkey,
+            "path": child_path
+        }));
+    }
+
+    Ok(children)
 }
 
 fn parse_registry_path(path: &str) -> Result<(isize, &str), String> {

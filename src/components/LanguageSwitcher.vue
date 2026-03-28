@@ -2,7 +2,7 @@
   <el-dropdown trigger="click" @command="handleCommand">
     <el-button class="language-btn" circle>
       <el-icon size="18">
-        <Globe />
+        <Promotion />
       </el-icon>
     </el-button>
     <template #dropdown>
@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Globe } from '@element-plus/icons-vue'
+import { Promotion } from '@element-plus/icons-vue'
 import { setLocale, getLocale } from '@/locales'
 
 const currentLocale = computed(() => getLocale())

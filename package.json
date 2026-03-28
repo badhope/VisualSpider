@@ -1,16 +1,32 @@
 {
-  "name": "windows-toolbox",
-  "private": true,
+  "name": "visual-spider",
+  "private": false,
   "version": "1.0.0",
   "type": "module",
-  "description": "Windows系统工具箱 - 可视化系统管理工具",
-  "author": "WindowsToolbox Team",
+  "description": "VisualSpider - A powerful Windows system management tool with modern UI, built with Tauri 2.0, Vue 3, and Rust",
+  "author": {
+    "name": "badhope",
+    "email": "badhope@users.noreply.github.com",
+    "url": "https://github.com/badhope"
+  },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/badhope/VisualSpider.git"
+  },
+  "bugs": {
+    "url": "https://github.com/badhope/VisualSpider/issues"
+  },
+  "homepage": "https://github.com/badhope/VisualSpider#readme",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "check:env": "powershell -ExecutionPolicy Bypass -File ./scripts/check-environment.ps1 -CheckOnly",
+    "setup": "powershell -ExecutionPolicy Bypass -File ./scripts/check-environment.ps1 -Install",
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
@@ -20,29 +36,31 @@
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
-    "vue": "^3.4.21",
-    "vue-router": "^4.3.0",
-    "pinia": "^2.1.7",
-    "element-plus": "^2.6.1",
     "@element-plus/icons-vue": "^2.3.1",
-    "vue-i18n": "^9.10.2"
+    "element-plus": "^2.6.1",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-i18n": "^9.10.2",
+    "vue-router": "^4.3.0"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.0.0",
     "@tauri-apps/api": "^2.0.0",
-    "@vitejs/plugin-vue": "^5.0.4",
-    "typescript": "^5.4.2",
-    "vite": "^5.1.6",
-    "vue-tsc": "^2.0.6",
-    "vitest": "^1.3.1",
-    "@vue/test-utils": "^2.4.4",
-    "jsdom": "^24.0.0",
-    "eslint": "^8.57.0",
+    "@tauri-apps/cli": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
     "@typescript-eslint/parser": "^7.0.2",
-    "eslint-plugin-vue": "^9.22.0",
+    "@vitejs/plugin-vue": "^5.0.4",
     "@vue/eslint-config-typescript": "^12.0.0",
-    "prettier": "^3.2.5"
+    "@vue/test-utils": "^2.4.4",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.22.0",
+    "jsdom": "^24.0.0",
+    "png-to-ico": "^3.0.1",
+    "prettier": "^3.2.5",
+    "sharp": "^0.34.5",
+    "typescript": "^5.4.2",
+    "vite": "^5.1.6",
+    "vitest": "^1.3.1",
+    "vue-tsc": "^2.0.6"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -52,10 +70,29 @@
     "windows",
     "toolbox",
     "system-tools",
+    "system-manager",
     "powershell",
-    "registry",
+    "registry-editor",
+    "process-manager",
+    "service-manager",
+    "network-tools",
+    "disk-tools",
     "vue",
+    "vue3",
     "typescript",
-    "tauri"
-  ]
+    "tauri",
+    "tauri2",
+    "rust",
+    "desktop-app",
+    "windows-10",
+    "windows-11"
+  ],
+  "categories": [
+    "Utilities",
+    "System"
+  ],
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/badhope"
+  }
 }

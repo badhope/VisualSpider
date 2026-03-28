@@ -38,7 +38,7 @@
             <el-tag type="info">{{ $t(`services.${row.startType.toLowerCase()}`) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column :label="$t('common.edit')" width="200" fixed="right">
           <template #default="{ row }">
             <el-button 
               v-if="row.status !== 'Running'" 
@@ -76,8 +76,10 @@ import { ref, computed, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import type { SystemService } from '@/types'
 
+const { t } = useI18n()
 const loading = ref(false)
 const searchText = ref('')
 const services = ref<SystemService[]>([])
@@ -106,7 +108,7 @@ async function loadServices() {
     const result = await invoke<SystemService[]>('get_services')
     services.value = result
   } catch (error) {
-    ElMessage.error(`加载服务列表失败: ${error}`)
+    ElMessage.error(t('services.loadFailed') + `: ${error}`)
   } finally {
     loading.value = false
   }
@@ -115,10 +117,15 @@ async function loadServices() {
 async function controlService(name: string, action: 'start' | 'stop' | 'restart') {
   try {
     await invoke(`service_${action}`, { name })
-    ElMessage.success(`服务 ${name} ${action === 'start' ? '启动' : action === 'stop' ? '停止' : '重启'}成功`)
+    const messages = {
+      start: t('services.startSuccess'),
+      stop: t('services.stopSuccess'),
+      restart: t('services.restartSuccess')
+    }
+    ElMessage.success(messages[action])
     await loadServices()
   } catch (error) {
-    ElMessage.error(`操作失败: ${error}`)
+    ElMessage.error(t('services.operationFailed') + `: ${error}`)
   }
 }
 

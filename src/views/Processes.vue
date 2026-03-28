@@ -15,78 +15,317 @@
                 <el-icon><Search /></el-icon>
               </template>
             </el-input>
-            <el-button @click="loadProcesses">
-              <el-icon><Refresh /></el-icon>
-              {{ $t('processes.refresh') }}
+            
+            <el-select v-model="filterType" :placeholder="$t('processes.filterType')" clearable style="width: 120px; margin-right: 12px;">
+              <el-option :label="$t('processes.all')" value="" />
+              <el-option :label="$t('processes.systemProcess')" value="system" />
+              <el-option :label="$t('processes.userProcess')" value="user" />
+              <el-option :label="$t('processes.highCpu')" value="high_cpu" />
+              <el-option :label="$t('processes.highMemory')" value="high_memory" />
+            </el-select>
+            
+            <el-button-group style="margin-right: 12px;">
+              <el-button :type="autoRefresh ? 'primary' : 'default'" @click="toggleAutoRefresh">
+                <el-icon><Timer /></el-icon>
+                {{ autoRefresh ? $t('processes.autoRefresh') : $t('processes.manualRefresh') }}
+              </el-button>
+              <el-button @click="loadProcesses" :loading="loading">
+                <el-icon><Refresh /></el-icon>
+              </el-button>
+            </el-button-group>
+            
+            <el-button 
+              type="danger" 
+              :disabled="selectedProcesses.length === 0"
+              @click="batchEndProcesses"
+            >
+              <el-icon><Close /></el-icon>
+              {{ $t('processes.endSelected') }} ({{ selectedProcesses.length }})
             </el-button>
           </div>
         </div>
       </template>
       
-      <el-table :data="filteredProcesses" v-loading="loading" border stripe max-height="600">
-        <el-table-column prop="pid" :label="$t('processes.pid')" width="100" />
-        <el-table-column prop="name" :label="$t('processes.name')" width="200" show-overflow-tooltip />
-        <el-table-column prop="cpu" :label="$t('processes.cpu')" width="100">
+      <div class="stats-bar">
+        <div class="stat-item">
+          <span class="stat-label">{{ $t('processes.totalProcesses') }}</span>
+          <span class="stat-value">{{ processes.length }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">{{ $t('processes.cpuUsage') }}</span>
+          <span class="stat-value">{{ totalCpu.toFixed(1) }}%</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">{{ $t('processes.memoryUsage') }}</span>
+          <span class="stat-value">{{ formatBytes(totalMemory) }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">{{ $t('processes.refreshInterval') }}</span>
+          <el-select v-model="refreshInterval" size="small" style="width: 80px;" :disabled="!autoRefresh">
+            <el-option :value="2" :label="$t('processes.seconds', { n: 2 })" />
+            <el-option :value="5" :label="$t('processes.seconds', { n: 5 })" />
+            <el-option :value="10" :label="$t('processes.seconds', { n: 10 })" />
+            <el-option :value="30" :label="$t('processes.seconds', { n: 30 })" />
+          </el-select>
+        </div>
+      </div>
+      
+      <el-table 
+        :data="filteredProcesses" 
+        v-loading="loading" 
+        border 
+        stripe 
+        max-height="500"
+        @selection-change="handleSelectionChange"
+        :default-sort="{ prop: 'cpu', order: 'descending' }"
+      >
+        <el-table-column type="selection" width="40" />
+        <el-table-column prop="pid" label="PID" width="80" sortable />
+        <el-table-column prop="name" :label="$t('processes.processName')" width="180" show-overflow-tooltip sortable>
           <template #default="{ row }">
-            {{ row.cpu ? row.cpu.toFixed(2) + '%' : '0%' }}
+            <div class="process-name">
+              <el-icon v-if="row.isSystem" style="color: #E6A23C;"><WarnTriangleFilled /></el-icon>
+              <span>{{ row.name }}</span>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="memory" :label="$t('processes.memory')" width="120">
+        <el-table-column prop="cpu" :label="$t('processes.cpu')" width="100" sortable>
           <template #default="{ row }">
-            {{ formatBytes(row.memory) }}
+            <el-progress 
+              :percentage="Math.min(row.cpu || 0, 100)" 
+              :color="getCpuColor(row.cpu)"
+              :stroke-width="10"
+              :show-text="false"
+            />
+            <span class="progress-text">{{ (row.cpu || 0).toFixed(1) }}%</span>
           </template>
         </el-table-column>
-        <el-table-column prop="user" :label="$t('processes.user')" width="120" show-overflow-tooltip />
-        <el-table-column prop="priority" :label="$t('processes.priority')" width="100" />
+        <el-table-column prop="memory" label="内存" width="140" sortable>
+          <template #default="{ row }">
+            <div class="memory-cell">
+              <span>{{ formatBytes(row.memory) }}</span>
+              <el-progress 
+                :percentage="getMemoryPercentage(row.memory)" 
+                :color="getMemoryColor(row.memory)"
+                :stroke-width="4"
+                :show-text="false"
+              />
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="user" label="用户" width="100" show-overflow-tooltip />
+        <el-table-column prop="priority" label="优先级" width="90" sortable>
+          <template #default="{ row }">
+            <el-tag size="small" :type="getPriorityType(row.priority)">
+              {{ row.priority }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="threads" label="线程" width="70" sortable />
         <el-table-column prop="path" label="路径" show-overflow-tooltip />
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button type="danger" size="small" @click="endProcess(row)">
-              {{ $t('processes.endProcess') }}
+            <el-button text size="small" @click="showProcessDetail(row)">
+              <el-icon><View /></el-icon>
+              详情
+            </el-button>
+            <el-button text size="small" @click="changePriority(row)">
+              <el-icon><Rank /></el-icon>
+              优先级
+            </el-button>
+            <el-button text size="small" type="danger" @click="endProcess(row)">
+              <el-icon><Close /></el-icon>
+              结束
             </el-button>
           </template>
         </el-table-column>
       </el-table>
+      
+      <div class="table-footer">
+        <span>显示 {{ filteredProcesses.length }} / {{ processes.length }} 个进程</span>
+      </div>
     </el-card>
+    
+    <el-dialog v-model="detailDialogVisible" :title="$t('processes.processDetail') + ' - ' + selectedProcess?.name" width="600px">
+      <div v-if="selectedProcess" class="process-detail">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item :label="$t('processes.processName')">{{ selectedProcess.name }}</el-descriptions-item>
+          <el-descriptions-item label="PID">{{ selectedProcess.pid }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('processes.cpuUsage')">{{ (selectedProcess.cpu || 0).toFixed(2) }}%</el-descriptions-item>
+          <el-descriptions-item :label="$t('processes.memoryUsage')">{{ formatBytes(selectedProcess.memory) }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('processes.user')">{{ selectedProcess.user }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('processes.priority')">
+            <el-tag size="small" :type="getPriorityType(selectedProcess.priority)">
+              {{ selectedProcess.priority }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('processes.threads')">{{ selectedProcess.threads || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('processes.handles')">{{ selectedProcess.handles || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('processes.startTime')">{{ selectedProcess.startTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('processes.runTime')">{{ selectedProcess.runTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('processes.path')" :span="2">{{ selectedProcess.path || '-' }}</el-descriptions-item>
+          <el-descriptions-item :label="$t('processes.commandLine')" :span="2">{{ selectedProcess.commandLine || '-' }}</el-descriptions-item>
+        </el-descriptions>
+        
+        <div class="detail-actions">
+          <el-button @click="openFileLocation(selectedProcess.path)">
+            <el-icon><FolderOpened /></el-icon>
+            {{ $t('processes.openFileLocation') }}
+          </el-button>
+          <el-button @click="copyProcessInfo(selectedProcess)">
+            <el-icon><CopyDocument /></el-icon>
+            {{ $t('processes.copyInfo') }}
+          </el-button>
+          <el-button type="danger" @click="endProcess(selectedProcess); detailDialogVisible = false">
+            <el-icon><Close /></el-icon>
+            {{ $t('processes.endProcess') }}
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
+    
+    <el-dialog v-model="priorityDialogVisible" :title="$t('processes.changePriority')" width="400px">
+      <div v-if="selectedProcess">
+        <p style="margin-bottom: 16px;">
+          {{ $t('processes.process') }}: <strong>{{ selectedProcess.name }}</strong> (PID: {{ selectedProcess.pid }})
+        </p>
+        <el-select v-model="newPriority" style="width: 100%;">
+          <el-option :label="$t('processes.realtime')" value="Realtime" />
+          <el-option :label="$t('processes.high')" value="High" />
+          <el-option :label="$t('processes.aboveNormal')" value="AboveNormal" />
+          <el-option :label="$t('processes.normal')" value="Normal" />
+          <el-option :label="$t('processes.belowNormal')" value="BelowNormal" />
+          <el-option :label="$t('processes.low')" value="Low" />
+        </el-select>
+        <p class="warning-text">
+          <el-icon><WarnTriangleFilled /></el-icon>
+          {{ $t('processes.priorityWarning') }}
+        </p>
+      </div>
+      <template #footer>
+        <el-button @click="priorityDialogVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="savePriority">{{ $t('common.save') }}</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh } from '@element-plus/icons-vue'
-import { useAppStore } from '@/stores'
+import { Search, Refresh, Timer, Close, View, Rank, FolderOpened, CopyDocument, WarnTriangleFilled } from '@element-plus/icons-vue'
 import type { ProcessInfo } from '@/types'
 
-const appStore = useAppStore()
+interface ExtendedProcessInfo extends ProcessInfo {
+  isSystem?: boolean
+  threads?: number
+  handles?: number
+  startTime?: string
+  runTime?: string
+  commandLine?: string
+}
+
 const loading = ref(false)
 const searchText = ref('')
-const processes = ref<ProcessInfo[]>([])
-let refreshInterval: number | null = null
+const filterType = ref('')
+const processes = ref<ExtendedProcessInfo[]>([])
+const selectedProcesses = ref<ExtendedProcessInfo[]>([])
+const autoRefresh = ref(true)
+const refreshInterval = ref(5)
+const detailDialogVisible = ref(false)
+const priorityDialogVisible = ref(false)
+const selectedProcess = ref<ExtendedProcessInfo | null>(null)
+const newPriority = ref('Normal')
+
+let refreshTimer: number | null = null
+
+const totalCpu = computed(() => {
+  return processes.value.reduce((sum, p) => sum + (p.cpu || 0), 0)
+})
+
+const totalMemory = computed(() => {
+  return processes.value.reduce((sum, p) => sum + (p.memory || 0), 0)
+})
 
 const filteredProcesses = computed(() => {
-  if (!searchText.value) return processes.value
-  const search = searchText.value.toLowerCase()
-  return processes.value.filter(p => 
-    p.name.toLowerCase().includes(search) ||
-    String(p.pid).includes(search)
-  )
+  let result = processes.value
+  
+  if (searchText.value) {
+    const search = searchText.value.toLowerCase()
+    result = result.filter(p => 
+      p.name.toLowerCase().includes(search) ||
+      String(p.pid).includes(search) ||
+      (p.path && p.path.toLowerCase().includes(search))
+    )
+  }
+  
+  if (filterType.value) {
+    switch (filterType.value) {
+      case 'system':
+        result = result.filter(p => p.isSystem || p.user === 'SYSTEM')
+        break
+      case 'user':
+        result = result.filter(p => !p.isSystem && p.user !== 'SYSTEM')
+        break
+      case 'high_cpu':
+        result = result.filter(p => (p.cpu || 0) > 50)
+        break
+      case 'high_memory':
+        result = result.filter(p => p.memory > 500 * 1024 * 1024)
+        break
+    }
+  }
+  
+  return result
 })
 
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
+  if (!bytes || bytes === 0) return '0 B'
   const k = 1024
   const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+function getCpuColor(cpu: number): string {
+  if (cpu > 80) return '#F56C6C'
+  if (cpu > 50) return '#E6A23C'
+  return '#67C23A'
+}
+
+function getMemoryColor(memory: number): string {
+  const mb = memory / (1024 * 1024)
+  if (mb > 1000) return '#F56C6C'
+  if (mb > 500) return '#E6A23C'
+  return '#67C23A'
+}
+
+function getMemoryPercentage(memory: number): number {
+  const maxMemory = 16 * 1024 * 1024 * 1024
+  return Math.min((memory / maxMemory) * 100, 100)
+}
+
+function getPriorityType(priority: string): string {
+  const types: Record<string, string> = {
+    'Realtime': 'danger',
+    'High': 'warning',
+    'AboveNormal': '',
+    'Normal': 'success',
+    'BelowNormal': 'info',
+    'Low': 'info'
+  }
+  return types[priority] || ''
+}
+
 async function loadProcesses() {
   loading.value = true
   try {
-    const result = await invoke<ProcessInfo[]>('get_processes')
-    processes.value = result
+    const result = await invoke<ExtendedProcessInfo[]>('get_processes')
+    processes.value = result.map(p => ({
+      ...p,
+      isSystem: p.user === 'SYSTEM' || p.user === 'LOCAL SERVICE' || p.user === 'NETWORK SERVICE'
+    }))
   } catch (error) {
     ElMessage.error(`加载进程列表失败: ${error}`)
   } finally {
@@ -94,37 +333,172 @@ async function loadProcesses() {
   }
 }
 
-async function endProcess(process: ProcessInfo) {
-  if (appStore.settings.general.confirmDangerousActions) {
-    await ElMessageBox.confirm(
-      $t('processes.confirmEnd'),
-      $t('common.warning'),
-      {
-        confirmButtonText: $t('common.confirm'),
-        cancelButtonText: $t('common.cancel'),
-        type: 'warning'
-      }
-    )
+function toggleAutoRefresh() {
+  autoRefresh.value = !autoRefresh.value
+  if (autoRefresh.value) {
+    startAutoRefresh()
+    ElMessage.success('已开启自动刷新')
+  } else {
+    stopAutoRefresh()
+    ElMessage.info('已关闭自动刷新')
   }
+}
+
+function startAutoRefresh() {
+  stopAutoRefresh()
+  refreshTimer = window.setInterval(loadProcesses, refreshInterval.value * 1000)
+}
+
+function stopAutoRefresh() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
+
+watch(refreshInterval, () => {
+  if (autoRefresh.value) {
+    startAutoRefresh()
+  }
+})
+
+function handleSelectionChange(selection: ExtendedProcessInfo[]) {
+  selectedProcesses.value = selection
+}
+
+function showProcessDetail(process: ExtendedProcessInfo) {
+  selectedProcess.value = process
+  detailDialogVisible.value = true
+}
+
+function changePriority(process: ExtendedProcessInfo) {
+  selectedProcess.value = process
+  newPriority.value = process.priority || 'Normal'
+  priorityDialogVisible.value = true
+}
+
+async function savePriority() {
+  if (!selectedProcess.value) return
   
   try {
+    await invoke('set_process_priority', {
+      pid: selectedProcess.value.pid,
+      priority: newPriority.value
+    })
+    ElMessage.success('优先级已更改')
+    priorityDialogVisible.value = false
+    await loadProcesses()
+  } catch (error) {
+    ElMessage.error(`更改优先级失败: ${error}`)
+  }
+}
+
+async function endProcess(process: ExtendedProcessInfo) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要结束进程 "${process.name}" (PID: ${process.pid}) 吗？这可能会导致数据丢失。`,
+      '确认结束进程',
+      {
+        confirmButtonText: '结束',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+    
     await invoke('end_process', { pid: process.pid })
     ElMessage.success(`进程 ${process.name} 已结束`)
     await loadProcesses()
   } catch (error) {
-    ElMessage.error(`结束进程失败: ${error}`)
+    if (error !== 'cancel') {
+      ElMessage.error(`结束进程失败: ${error}`)
+    }
+  }
+}
+
+async function batchEndProcesses() {
+  if (selectedProcesses.value.length === 0) return
+  
+  try {
+    await ElMessageBox.confirm(
+      `确定要结束选中的 ${selectedProcesses.value.length} 个进程吗？这可能会导致数据丢失。`,
+      '批量结束进程',
+      {
+        confirmButtonText: '结束',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+    
+    let success = 0
+    let failed = 0
+    
+    for (const process of selectedProcesses.value) {
+      try {
+        await invoke('end_process', { pid: process.pid })
+        success++
+      } catch {
+        failed++
+      }
+    }
+    
+    if (success > 0) {
+      ElMessage.success(`成功结束 ${success} 个进程${failed > 0 ? `，失败 ${failed} 个` : ''}`)
+    } else {
+      ElMessage.error('所有进程结束失败')
+    }
+    
+    selectedProcesses.value = []
+    await loadProcesses()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(`批量结束失败: ${error}`)
+    }
+  }
+}
+
+async function openFileLocation(path: string) {
+  if (!path) {
+    ElMessage.warning('无法获取文件路径')
+    return
+  }
+  
+  try {
+    await invoke('open_file_location', { path })
+  } catch (error) {
+    ElMessage.error(`打开文件位置失败: ${error}`)
+  }
+}
+
+async function copyProcessInfo(process: ExtendedProcessInfo) {
+  const info = `
+进程名: ${process.name}
+PID: ${process.pid}
+CPU: ${(process.cpu || 0).toFixed(2)}%
+内存: ${formatBytes(process.memory)}
+用户: ${process.user}
+优先级: ${process.priority}
+路径: ${process.path || '-'}
+  `.trim()
+  
+  try {
+    await navigator.clipboard.writeText(info)
+    ElMessage.success('已复制到剪贴板')
+  } catch {
+    ElMessage.error('复制失败')
   }
 }
 
 onMounted(() => {
   loadProcesses()
-  refreshInterval = window.setInterval(loadProcesses, 5000)
+  if (autoRefresh.value) {
+    startAutoRefresh()
+  }
 })
 
 onUnmounted(() => {
-  if (refreshInterval) {
-    clearInterval(refreshInterval)
-  }
+  stopAutoRefresh()
 })
 </script>
 
@@ -142,5 +516,81 @@ onUnmounted(() => {
 .header-actions {
   display: flex;
   align-items: center;
+}
+
+.stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 16px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-label {
+  color: #909399;
+  font-size: 13px;
+}
+
+.stat-value {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.process-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: #606266;
+  margin-left: 4px;
+}
+
+.memory-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.table-footer {
+  padding: 12px 0;
+  text-align: right;
+  color: #909399;
+  font-size: 13px;
+}
+
+.process-detail {
+  padding: 16px 0;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #ebeef5;
+}
+
+.warning-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  color: #E6A23C;
+  font-size: 13px;
+}
+
+:deep(.el-progress-bar__outer) {
+  height: 10px !important;
 }
 </style>
