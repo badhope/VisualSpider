@@ -1,6 +1,7 @@
 use crate::{CommandResult, SystemInfo};
 use std::process::Command;
 use std::env;
+use encoding_rs::GBK;
 
 pub fn get_system_info() -> Result<SystemInfo, String> {
     let os_name = "Windows".to_string();
@@ -32,18 +33,27 @@ fn get_user_name() -> String {
     env::var("USERNAME").unwrap_or_else(|_| "Unknown".to_string())
 }
 
+fn decode_output(bytes: &[u8]) -> String {
+    let (decoded, _, had_errors) = GBK.decode(bytes);
+    if had_errors {
+        String::from_utf8_lossy(bytes).to_string()
+    } else {
+        decoded.to_string()
+    }
+}
+
 fn get_os_version() -> Result<String, String> {
     let output = Command::new("powershell")
         .args([
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
             "-Command",
-            "(Get-CimInstance Win32_OperatingSystem).Caption"
+            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; (Get-CimInstance Win32_OperatingSystem).Caption"
         ])
         .output()
         .map_err(|e| format!("Failed to get OS version: {}", e))?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let stdout = decode_output(&output.stdout).trim().to_string();
     if stdout.is_empty() {
         return Ok("Unknown".to_string());
     }
@@ -56,12 +66,12 @@ fn get_os_build() -> Result<String, String> {
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
             "-Command",
-            "(Get-CimInstance Win32_OperatingSystem).BuildNumber"
+            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; (Get-CimInstance Win32_OperatingSystem).BuildNumber"
         ])
         .output()
         .map_err(|e| format!("Failed to get OS build: {}", e))?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let stdout = decode_output(&output.stdout).trim().to_string();
     Ok(stdout)
 }
 
@@ -71,12 +81,12 @@ fn get_cpu_info() -> Result<String, String> {
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
             "-Command",
-            "(Get-CimInstance Win32_Processor).Name"
+            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; (Get-CimInstance Win32_Processor).Name"
         ])
         .output()
         .map_err(|e| format!("Failed to get CPU info: {}", e))?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let stdout = decode_output(&output.stdout).trim().to_string();
     if stdout.is_empty() {
         return Ok("Unknown".to_string());
     }
@@ -94,19 +104,21 @@ fn get_total_memory() -> Result<u64, String> {
         .output()
         .map_err(|e| format!("Failed to get total memory: {}", e))?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let stdout = decode_output(&output.stdout).trim().to_string();
     let memory: u64 = stdout.parse().unwrap_or(0);
     Ok(memory)
 }
 
 pub fn execute_powershell(command: &str) -> Result<CommandResult, String> {
+    let full_command = format!("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; {}", command);
+    
     let output = Command::new("powershell")
-        .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command])
+        .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", &full_command])
         .output()
         .map_err(|e| format!("Failed to execute PowerShell: {}", e))?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let stdout = decode_output(&output.stdout);
+    let stderr = decode_output(&output.stderr);
     let exit_code = output.status.code().unwrap_or(-1);
 
     Ok(CommandResult {

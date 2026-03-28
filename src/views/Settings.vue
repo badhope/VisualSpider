@@ -289,6 +289,10 @@
               <el-icon><FolderOpened /></el-icon>
               {{ $t('settings.openLogFolder') }}
             </el-button>
+            <el-button @click="resetGuide">
+              <el-icon><QuestionFilled /></el-icon>
+              {{ $t('settings.resetGuide') }}
+            </el-button>
           </div>
         </el-card>
       </el-col>
@@ -324,7 +328,7 @@ import { setLocale } from '@/locales'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Download, Upload, Sunny, Moon, Monitor, Check, FolderOpened, 
-  Delete, RefreshLeft, RefreshRight, FolderAdd, Promotion 
+  Delete, RefreshLeft, RefreshRight, FolderAdd, Promotion, QuestionFilled
 } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
@@ -586,6 +590,11 @@ function checkUpdate() {
 
 function openLogFolder() {
   ElMessage.info(t('settings.openLogFolder'))
+}
+
+function resetGuide() {
+  localStorage.removeItem('visual-spider-guide-completed')
+  ElMessage.success(t('settings.guideReset'))
 }
 
 onMounted(() => {

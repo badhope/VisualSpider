@@ -1,6 +1,6 @@
 [package]
 name = "visual-spider"
-version = "1.0.0"
+version = "1.1.0"
 description = "VisualSpider - A powerful Windows system management tool"
 authors = ["badhope <badhope@users.noreply.github.com>"]
 edition = "2021"
@@ -41,6 +41,7 @@ windows = { version = "0.58", features = [
 winreg = "0.52"
 sysinfo = "0.32"
 chrono = "0.4"
+encoding_rs = "0.8"
 
 [profile.release]
 panic = "abort"

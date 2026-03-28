@@ -1,5 +1,15 @@
 use crate::DiskInfo;
 use std::process::Command;
+use encoding_rs::GBK;
+
+fn decode_output(bytes: &[u8]) -> String {
+    let (decoded, _, had_errors) = GBK.decode(bytes);
+    if had_errors {
+        String::from_utf8_lossy(bytes).to_string()
+    } else {
+        decoded.to_string()
+    }
+}
 
 pub fn get_disk_info() -> Result<Vec<DiskInfo>, String> {
     let output = Command::new("powershell")
@@ -7,12 +17,12 @@ pub fn get_disk_info() -> Result<Vec<DiskInfo>, String> {
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
             "-Command",
-            "Get-CimInstance Win32_LogicalDisk | Where-Object {$_.DriveType -eq 3} | Select-Object DeviceID, Size, FreeSpace, FileSystem, DriveType | ConvertTo-Json"
+            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-CimInstance Win32_LogicalDisk | Where-Object {$_.DriveType -eq 3} | Select-Object DeviceID, Size, FreeSpace, FileSystem, DriveType | ConvertTo-Json"
         ])
         .output()
         .map_err(|e| format!("Failed to get disk info: {}", e))?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = decode_output(&output.stdout);
     
     if stdout.trim().is_empty() || stdout.trim() == "null" {
         return Ok(vec![]);
@@ -57,7 +67,7 @@ pub fn check_disk(drive: &str) -> Result<(), String> {
         .map_err(|e| format!("Failed to check disk: {}", e))?;
 
     if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).to_string());
+        return Err(decode_output(&output.stderr));
     }
 
     Ok(())

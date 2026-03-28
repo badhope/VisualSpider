@@ -3,7 +3,7 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <el-icon v-if="!isCollapsed" size="28"><Tools /></el-icon>
-        <span v-if="!isCollapsed" class="logo-text">Windows工具箱</span>
+        <span v-if="!isCollapsed" class="logo-text">{{ $t('app.title') }}</span>
         <el-icon v-else size="24"><Tools /></el-icon>
       </div>
       
@@ -78,7 +78,7 @@
           
           <el-menu-item index="/logs">
             <el-icon><Document /></el-icon>
-            <template #title>操作日志</template>
+            <template #title>{{ $t('nav.logs') }}</template>
           </el-menu-item>
         </el-menu>
         <el-button 
@@ -96,6 +96,9 @@
           <h1 class="page-title">{{ currentPageTitle }}</h1>
         </div>
         <div class="header-right">
+          <el-button circle @click="showHelp = true" :title="$t('help.title')">
+            <el-icon><QuestionFilled /></el-icon>
+          </el-button>
           <LanguageSwitcher />
           <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="notification-badge">
             <el-button circle @click="showNotifications = true">
@@ -110,7 +113,7 @@
       </div>
     </main>
     
-    <el-drawer v-model="showNotifications" title="通知" size="400px">
+    <el-drawer v-model="showNotifications" :title="$t('notifications.title')" size="400px">
       <div class="notification-list">
         <div 
           v-for="item in notifications" 
@@ -131,9 +134,12 @@
             <div class="notification-time">{{ formatTime(item.timestamp) }}</div>
           </div>
         </div>
-        <el-empty v-if="notifications.length === 0" description="暂无通知" />
+        <el-empty v-if="notifications.length === 0" :description="$t('notifications.empty')" />
       </div>
     </el-drawer>
+    
+    <HelpPanel v-model="showHelp" />
+    <UserGuide v-if="showGuide" @finish="handleGuideFinish" @close="handleGuideClose" />
   </div>
 </template>
 
@@ -142,11 +148,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
+import HelpPanel from '@/components/HelpPanel.vue'
+import UserGuide from '@/components/UserGuide.vue'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import {
   Tools, HomeFilled, SetUp, Collection, Service, DataLine,
   Connection, FolderOpened, Position, TrendCharts, Setting,
-  Operation, Bell, SuccessFilled, WarningFilled, CircleCloseFilled, InfoFilled, Document
+  Operation, Bell, SuccessFilled, WarningFilled, CircleCloseFilled, InfoFilled, Document, QuestionFilled
 } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
@@ -155,6 +163,23 @@ const appStore = useAppStore()
 
 const isCollapsed = ref(false)
 const showNotifications = ref(false)
+const showHelp = ref(false)
+const showGuide = ref(false)
+
+function handleGuideFinish() {
+  showGuide.value = false
+}
+
+function handleGuideClose() {
+  showGuide.value = false
+}
+
+onMounted(() => {
+  const guideCompleted = localStorage.getItem('visual-spider-guide-completed')
+  if (guideCompleted !== 'true') {
+    showGuide.value = true
+  }
+})
 
 const currentRoute = computed(() => route.path)
 const notifications = computed(() => appStore.notifications)

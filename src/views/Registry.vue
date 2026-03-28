@@ -266,6 +266,7 @@ import { ref, computed, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, Search, Folder, FolderOpened, Plus, Download, Star, Delete, CopyDocument } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import type { RegistryValue } from '@/types'
 
 interface TreeNode {
@@ -280,6 +281,7 @@ interface FavoritePath {
   path: string
 }
 
+const { t } = useI18n()
 const treeRef = ref()
 const loading = ref(false)
 const loadingValues = ref(false)
@@ -363,7 +365,7 @@ async function loadValues(path: string) {
     const result = await invoke<RegistryValue[]>('get_registry_values', { path })
     registryValues.value = result || []
   } catch (error) {
-    ElMessage.error(`加载注册表值失败: ${error}`)
+    ElMessage.error(t('registry.loadValuesFailed') + `: ${error}`)
     registryValues.value = []
   } finally {
     loadingValues.value = false
@@ -380,9 +382,9 @@ async function refreshTree() {
       { name: 'HKEY_USERS', path: 'HKEY_USERS', isRoot: true },
       { name: 'HKEY_CURRENT_CONFIG', path: 'HKEY_CURRENT_CONFIG', isRoot: true }
     ]
-    ElMessage.success('刷新成功')
+    ElMessage.success(t('registry.refreshSuccess'))
   } catch (error) {
-    ElMessage.error(`刷新失败: ${error}`)
+    ElMessage.error(t('registry.refreshFailed') + `: ${error}`)
   } finally {
     loading.value = false
   }
@@ -396,7 +398,7 @@ function jumpToPath() {
   
   const rootKey = validRoots.find(r => path.startsWith(r))
   if (!rootKey) {
-    ElMessage.error('无效的注册表路径')
+    ElMessage.error(t('registry.invalidPath'))
     return
   }
   
@@ -412,7 +414,7 @@ function jumpToFavorite(path: string) {
 
 function createValue() {
   if (!currentPath.value) {
-    ElMessage.warning('请先选择一个注册表项')
+    ElMessage.warning(t('registry.selectKeyFirst'))
     return
   }
   editingValue.value = null
@@ -431,15 +433,15 @@ function editValue(row: RegistryValue) {
 }
 
 async function deleteValue(row: RegistryValue) {
-  const name = row.name === '(默认)' ? '默认值' : row.name
+  const name = row.name === '(默认)' ? t('registry.defaultValue') : row.name
   
   try {
     await ElMessageBox.confirm(
-      `确定要删除值 "${name}" 吗？此操作不可恢复。`,
-      '确认删除',
+      t('registry.confirmDeleteValue', { name }),
+      t('registry.confirmDeleteTitle'),
       {
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.delete'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning',
         confirmButtonClass: 'el-button--danger'
       }
@@ -450,11 +452,11 @@ async function deleteValue(row: RegistryValue) {
       name: row.name
     })
     
-    ElMessage.success('删除成功')
+    ElMessage.success(t('registry.deleteSuccess'))
     await loadValues(currentPath.value)
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error(`删除失败: ${error}`)
+      ElMessage.error(t('registry.deleteFailed') + `: ${error}`)
     }
   }
 }
@@ -484,11 +486,11 @@ async function saveValue() {
       })
     }
     
-    ElMessage.success('保存成功')
+    ElMessage.success(t('registry.saveSuccess'))
     editDialogVisible.value = false
     await loadValues(currentPath.value)
   } catch (error) {
-    ElMessage.error(`保存失败: ${error}`)
+    ElMessage.error(t('registry.saveFailed') + `: ${error}`)
   } finally {
     saving.value = false
   }
@@ -496,7 +498,7 @@ async function saveValue() {
 
 async function exportKey() {
   if (!currentPath.value) {
-    ElMessage.warning('请先选择一个注册表项')
+    ElMessage.warning(t('registry.selectKeyFirst'))
     return
   }
   
@@ -511,9 +513,9 @@ async function exportKey() {
     a.click()
     URL.revokeObjectURL(url)
     
-    ElMessage.success('导出成功')
+    ElMessage.success(t('registry.exportSuccess'))
   } catch (error) {
-    ElMessage.error(`导出失败: ${error}`)
+    ElMessage.error(t('registry.exportFailed') + `: ${error}`)
   }
 }
 
@@ -522,9 +524,9 @@ async function copyPath() {
   
   try {
     await navigator.clipboard.writeText(currentPath.value)
-    ElMessage.success('路径已复制到剪贴板')
+    ElMessage.success(t('registry.pathCopied'))
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('common.copyFailed'))
   }
 }
 
@@ -541,14 +543,14 @@ function toggleFavorite(data: TreeNode) {
       path: data.path
     })
     saveFavorites()
-    ElMessage.success('已添加到收藏')
+    ElMessage.success(t('registry.addedToFavorites'))
   }
 }
 
 function removeFavorite(path: string) {
   favoritePaths.value = favoritePaths.value.filter(f => f.path !== path)
   saveFavorites()
-  ElMessage.success('已从收藏中移除')
+  ElMessage.success(t('registry.removedFromFavorites'))
 }
 
 function saveFavorites() {

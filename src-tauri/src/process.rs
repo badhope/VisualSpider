@@ -1,6 +1,16 @@
 use crate::ProcessInfo;
 use sysinfo::System;
 use std::process::Command;
+use encoding_rs::GBK;
+
+fn decode_output(bytes: &[u8]) -> String {
+    let (decoded, _, had_errors) = GBK.decode(bytes);
+    if had_errors {
+        String::from_utf8_lossy(bytes).to_string()
+    } else {
+        decoded.to_string()
+    }
+}
 
 pub fn get_processes() -> Result<Vec<ProcessInfo>, String> {
     let mut sys = System::new_all();
@@ -87,25 +97,27 @@ pub fn end_process(pid: u32) -> Result<(), String> {
         .map_err(|e| format!("Failed to kill process: {}", e))?;
 
     if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).to_string());
+        return Err(decode_output(&output.stderr));
     }
 
     Ok(())
 }
 
 pub fn set_process_priority(pid: u32, priority: &str) -> Result<(), String> {
+    let command = format!("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $p = Get-Process -Id {}; $p.PriorityClass = '{}'", pid, priority);
+    
     let output = Command::new("powershell")
         .args([
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
             "-Command",
-            &format!("$p = Get-Process -Id {}; $p.PriorityClass = '{}'", pid, priority)
+            &command
         ])
         .output()
         .map_err(|e| format!("Failed to set priority: {}", e))?;
 
     if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).to_string());
+        return Err(decode_output(&output.stderr));
     }
 
     Ok(())

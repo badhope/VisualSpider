@@ -1,5 +1,15 @@
 use crate::ServiceInfo;
 use std::process::Command;
+use encoding_rs::GBK;
+
+fn decode_output(bytes: &[u8]) -> String {
+    let (decoded, _, had_errors) = GBK.decode(bytes);
+    if had_errors {
+        String::from_utf8_lossy(bytes).to_string()
+    } else {
+        decoded.to_string()
+    }
+}
 
 pub fn get_services() -> Result<Vec<ServiceInfo>, String> {
     let output = Command::new("powershell")
@@ -7,12 +17,12 @@ pub fn get_services() -> Result<Vec<ServiceInfo>, String> {
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
             "-Command",
-            "Get-Service | Select-Object Name, DisplayName, Status, StartType, CanStop, CanPauseAndContinue | ConvertTo-Json"
+            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-Service | Select-Object Name, DisplayName, Status, StartType, CanStop, CanPauseAndContinue | ConvertTo-Json"
         ])
         .output()
         .map_err(|e| format!("Failed to get services: {}", e))?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = decode_output(&output.stdout);
     
     if stdout.trim().is_empty() || stdout.trim() == "null" {
         return Ok(vec![]);
@@ -53,18 +63,20 @@ pub fn control_service(name: &str, action: &str) -> Result<(), String> {
         _ => return Err(format!("Unknown action: {}", action)),
     };
 
+    let full_command = format!("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; {}", command);
+
     let output = Command::new("powershell")
         .args([
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
             "-Command",
-            &command
+            &full_command
         ])
         .output()
         .map_err(|e| format!("Failed to {} service: {}", action, e))?;
 
     if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).to_string());
+        return Err(decode_output(&output.stderr));
     }
 
     Ok(())

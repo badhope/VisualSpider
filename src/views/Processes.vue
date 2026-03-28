@@ -100,7 +100,7 @@
             <span class="progress-text">{{ (row.cpu || 0).toFixed(1) }}%</span>
           </template>
         </el-table-column>
-        <el-table-column prop="memory" label="内存" width="140" sortable>
+        <el-table-column prop="memory" :label="$t('processes.memory')" width="140" sortable>
           <template #default="{ row }">
             <div class="memory-cell">
               <span>{{ formatBytes(row.memory) }}</span>
@@ -113,36 +113,36 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="user" label="用户" width="100" show-overflow-tooltip />
-        <el-table-column prop="priority" label="优先级" width="90" sortable>
+        <el-table-column prop="user" :label="$t('processes.user')" width="100" show-overflow-tooltip />
+        <el-table-column prop="priority" :label="$t('processes.priority')" width="90" sortable>
           <template #default="{ row }">
             <el-tag size="small" :type="getPriorityType(row.priority)">
               {{ row.priority }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="threads" label="线程" width="70" sortable />
-        <el-table-column prop="path" label="路径" show-overflow-tooltip />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column prop="threads" :label="$t('processes.threads')" width="70" sortable />
+        <el-table-column prop="path" :label="$t('processes.path')" show-overflow-tooltip />
+        <el-table-column :label="$t('common.operation')" width="180" fixed="right">
           <template #default="{ row }">
             <el-button text size="small" @click="showProcessDetail(row)">
               <el-icon><View /></el-icon>
-              详情
+              {{ $t('processes.detail') }}
             </el-button>
             <el-button text size="small" @click="changePriority(row)">
               <el-icon><Rank /></el-icon>
-              优先级
+              {{ $t('processes.changePriority') }}
             </el-button>
             <el-button text size="small" type="danger" @click="endProcess(row)">
               <el-icon><Close /></el-icon>
-              结束
+              {{ $t('processes.end') }}
             </el-button>
           </template>
         </el-table-column>
       </el-table>
       
       <div class="table-footer">
-        <span>显示 {{ filteredProcesses.length }} / {{ processes.length }} 个进程</span>
+        <span>{{ $t('processes.showingProcesses', { shown: filteredProcesses.length, total: processes.length }) }}</span>
       </div>
     </el-card>
     
@@ -184,7 +184,7 @@
       </div>
     </el-dialog>
     
-    <el-dialog v-model="priorityDialogVisible" :title="$t('processes.changePriority')" width="400px">
+    <el-dialog v-model="priorityDialogVisible" :title="$t('processes.changePriorityTitle')" width="400px">
       <div v-if="selectedProcess">
         <p style="margin-bottom: 16px;">
           {{ $t('processes.process') }}: <strong>{{ selectedProcess.name }}</strong> (PID: {{ selectedProcess.pid }})
@@ -215,6 +215,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Timer, Close, View, Rank, FolderOpened, CopyDocument, WarnTriangleFilled } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import type { ProcessInfo } from '@/types'
 
 interface ExtendedProcessInfo extends ProcessInfo {
@@ -226,6 +227,7 @@ interface ExtendedProcessInfo extends ProcessInfo {
   commandLine?: string
 }
 
+const { t } = useI18n()
 const loading = ref(false)
 const searchText = ref('')
 const filterType = ref('')
@@ -327,7 +329,7 @@ async function loadProcesses() {
       isSystem: p.user === 'SYSTEM' || p.user === 'LOCAL SERVICE' || p.user === 'NETWORK SERVICE'
     }))
   } catch (error) {
-    ElMessage.error(`加载进程列表失败: ${error}`)
+    ElMessage.error(t('processes.loadFailed') + `: ${error}`)
   } finally {
     loading.value = false
   }
@@ -337,10 +339,10 @@ function toggleAutoRefresh() {
   autoRefresh.value = !autoRefresh.value
   if (autoRefresh.value) {
     startAutoRefresh()
-    ElMessage.success('已开启自动刷新')
+    ElMessage.success(t('processes.autoRefreshEnabled'))
   } else {
     stopAutoRefresh()
-    ElMessage.info('已关闭自动刷新')
+    ElMessage.info(t('processes.autoRefreshDisabled'))
   }
 }
 
@@ -385,33 +387,33 @@ async function savePriority() {
       pid: selectedProcess.value.pid,
       priority: newPriority.value
     })
-    ElMessage.success('优先级已更改')
+    ElMessage.success(t('processes.priorityChanged'))
     priorityDialogVisible.value = false
     await loadProcesses()
   } catch (error) {
-    ElMessage.error(`更改优先级失败: ${error}`)
+    ElMessage.error(t('processes.priorityChangeFailed') + `: ${error}`)
   }
 }
 
 async function endProcess(process: ExtendedProcessInfo) {
   try {
     await ElMessageBox.confirm(
-      `确定要结束进程 "${process.name}" (PID: ${process.pid}) 吗？这可能会导致数据丢失。`,
-      '确认结束进程',
+      t('processes.confirmEndProcess', { name: process.name, pid: process.pid }),
+      t('processes.confirmEndProcessTitle'),
       {
-        confirmButtonText: '结束',
-        cancelButtonText: '取消',
+        confirmButtonText: t('processes.end'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning',
         confirmButtonClass: 'el-button--danger'
       }
     )
     
     await invoke('end_process', { pid: process.pid })
-    ElMessage.success(`进程 ${process.name} 已结束`)
+    ElMessage.success(t('processes.endProcessSuccess', { name: process.name }))
     await loadProcesses()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error(`结束进程失败: ${error}`)
+      ElMessage.error(t('processes.endProcessFailed') + `: ${error}`)
     }
   }
 }
@@ -421,11 +423,11 @@ async function batchEndProcesses() {
   
   try {
     await ElMessageBox.confirm(
-      `确定要结束选中的 ${selectedProcesses.value.length} 个进程吗？这可能会导致数据丢失。`,
-      '批量结束进程',
+      t('processes.confirmBatchEnd', { count: selectedProcesses.value.length }),
+      t('processes.batchEndProcessTitle'),
       {
-        confirmButtonText: '结束',
-        cancelButtonText: '取消',
+        confirmButtonText: t('processes.end'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning',
         confirmButtonClass: 'el-button--danger'
       }
@@ -444,49 +446,49 @@ async function batchEndProcesses() {
     }
     
     if (success > 0) {
-      ElMessage.success(`成功结束 ${success} 个进程${failed > 0 ? `，失败 ${failed} 个` : ''}`)
+      ElMessage.success(t('processes.batchEndSuccess', { success }) + (failed > 0 ? `, ${t('processes.failed')}: ${failed}` : ''))
     } else {
-      ElMessage.error('所有进程结束失败')
+      ElMessage.error(t('processes.batchEndFailed'))
     }
     
     selectedProcesses.value = []
     await loadProcesses()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error(`批量结束失败: ${error}`)
+      ElMessage.error(t('processes.endProcessFailed') + `: ${error}`)
     }
   }
 }
 
 async function openFileLocation(path: string) {
   if (!path) {
-    ElMessage.warning('无法获取文件路径')
+    ElMessage.warning(t('processes.cannotGetFilePath'))
     return
   }
   
   try {
     await invoke('open_file_location', { path })
   } catch (error) {
-    ElMessage.error(`打开文件位置失败: ${error}`)
+    ElMessage.error(t('processes.openFileLocationFailed') + `: ${error}`)
   }
 }
 
 async function copyProcessInfo(process: ExtendedProcessInfo) {
   const info = `
-进程名: ${process.name}
+${t('processes.processName')}: ${process.name}
 PID: ${process.pid}
-CPU: ${(process.cpu || 0).toFixed(2)}%
-内存: ${formatBytes(process.memory)}
-用户: ${process.user}
-优先级: ${process.priority}
-路径: ${process.path || '-'}
+${t('processes.cpu')}: ${(process.cpu || 0).toFixed(2)}%
+${t('processes.memory')}: ${formatBytes(process.memory)}
+${t('processes.user')}: ${process.user}
+${t('processes.priority')}: ${process.priority}
+${t('processes.path')}: ${process.path || '-'}
   `.trim()
   
   try {
     await navigator.clipboard.writeText(info)
-    ElMessage.success('已复制到剪贴板')
+    ElMessage.success(t('common.copySuccess'))
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('common.copyFailed'))
   }
 }
 

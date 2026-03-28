@@ -33,7 +33,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { ElMessage } from 'element-plus'
 import { 
   Setting, Monitor, Cpu, Collection, Document, 
-  Tickets, DataBoard, Grid, Tools
+  Tickets, DataBoard, Grid, Tools, Connection, Upload, User
 } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import type { QuickAction } from '@/types'
@@ -42,7 +42,7 @@ const { t } = useI18n()
 
 const iconMap: Record<string, any> = {
   Setting, Monitor, Cpu, Collection, Document, 
-  Tickets, DataBoard, Grid, Tools
+  Tickets, DataBoard, Grid, Tools, Connection, Upload, User
 }
 
 const quickActions = ref<QuickAction[]>([
@@ -57,7 +57,15 @@ const quickActions = ref<QuickAction[]>([
   { id: '9', name: t('quickActions.powershell'), description: t('quickActions.powershellDesc'), icon: 'Grid', command: 'powershell', category: 'system', requiresAdmin: false },
   { id: '10', name: t('quickActions.serviceManager'), description: t('quickActions.serviceManagerDesc'), icon: 'Tools', command: 'services.msc', category: 'system', requiresAdmin: true },
   { id: '11', name: t('quickActions.computerManagement'), description: t('quickActions.computerManagementDesc'), icon: 'Monitor', command: 'compmgmt.msc', category: 'system', requiresAdmin: true },
-  { id: '12', name: t('quickActions.diskManagement'), description: t('quickActions.diskManagementDesc'), icon: 'Setting', command: 'diskmgmt.msc', category: 'system', requiresAdmin: true }
+  { id: '12', name: t('quickActions.diskManagement'), description: t('quickActions.diskManagementDesc'), icon: 'Setting', command: 'diskmgmt.msc', category: 'system', requiresAdmin: true },
+  { id: '13', name: t('quickActions.performanceMonitor'), description: t('quickActions.performanceMonitorDesc'), icon: 'DataBoard', command: 'perfmon.msc', category: 'system', requiresAdmin: false },
+  { id: '14', name: t('quickActions.resourceMonitor'), description: t('quickActions.resourceMonitorDesc'), icon: 'DataBoard', command: 'resmon', category: 'system', requiresAdmin: false },
+  { id: '15', name: t('quickActions.systemConfig'), description: t('quickActions.systemConfigDesc'), icon: 'Setting', command: 'msconfig', category: 'system', requiresAdmin: true },
+  { id: '16', name: t('quickActions.networkConnections'), description: t('quickActions.networkConnectionsDesc'), icon: 'Connection', command: 'ncpa.cpl', category: 'network', requiresAdmin: false },
+  { id: '17', name: t('quickActions.firewall'), description: t('quickActions.firewallDesc'), icon: 'Setting', command: 'firewall.cpl', category: 'network', requiresAdmin: true },
+  { id: '18', name: t('quickActions.windowsUpdate'), description: t('quickActions.windowsUpdateDesc'), icon: 'Upload', command: 'ms-settings:windowsupdate', category: 'system', requiresAdmin: false },
+  { id: '19', name: t('quickActions.programsFeatures'), description: t('quickActions.programsFeaturesDesc'), icon: 'Grid', command: 'appwiz.cpl', category: 'system', requiresAdmin: false },
+  { id: '20', name: t('quickActions.userAccounts'), description: t('quickActions.userAccountsDesc'), icon: 'User', command: 'netplwiz', category: 'system', requiresAdmin: true }
 ])
 
 async function executeAction(action: QuickAction) {

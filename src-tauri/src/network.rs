@@ -1,5 +1,15 @@
 use crate::NetworkConnection;
 use std::process::Command;
+use encoding_rs::GBK;
+
+fn decode_output(bytes: &[u8]) -> String {
+    let (decoded, _, had_errors) = GBK.decode(bytes);
+    if had_errors {
+        String::from_utf8_lossy(bytes).to_string()
+    } else {
+        decoded.to_string()
+    }
+}
 
 pub fn get_network_connections() -> Result<Vec<NetworkConnection>, String> {
     let output = Command::new("netstat")
@@ -7,7 +17,7 @@ pub fn get_network_connections() -> Result<Vec<NetworkConnection>, String> {
         .output()
         .map_err(|e| format!("Failed to get network connections: {}", e))?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = decode_output(&output.stdout);
     let mut connections = Vec::new();
 
     for line in stdout.lines().skip(4) {
@@ -57,7 +67,7 @@ pub fn get_port_usage() -> Result<Vec<serde_json::Value>, String> {
         .output()
         .map_err(|e| format!("Failed to get port usage: {}", e))?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = decode_output(&output.stdout);
     let mut ports = Vec::new();
 
     for line in stdout.lines().skip(4) {
@@ -90,7 +100,7 @@ fn get_process_name(pid: u32) -> String {
         .output();
 
     if let Ok(output) = output {
-        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stdout = decode_output(&output.stdout);
         if let Some(line) = stdout.lines().next() {
             let parts: Vec<&str> = line.split(',').collect();
             if parts.len() >= 1 {
@@ -108,12 +118,12 @@ pub fn get_dns_servers() -> Result<Vec<String>, String> {
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
             "-Command",
-            "Get-DnsClientServerAddress -AddressFamily IPv4 | Select-Object -ExpandProperty ServerAddresses | Sort-Object -Unique"
+            "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-DnsClientServerAddress -AddressFamily IPv4 | Select-Object -ExpandProperty ServerAddresses | Sort-Object -Unique"
         ])
         .output()
         .map_err(|e| format!("Failed to get DNS servers: {}", e))?;
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = decode_output(&output.stdout);
     let servers: Vec<String> = stdout
         .lines()
         .map(|s| s.trim().to_string())
@@ -130,7 +140,7 @@ pub fn flush_dns() -> Result<(), String> {
         .map_err(|e| format!("Failed to flush DNS: {}", e))?;
 
     if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).to_string());
+        return Err(decode_output(&output.stderr));
     }
 
     Ok(())
@@ -143,7 +153,7 @@ pub fn release_ip() -> Result<(), String> {
         .map_err(|e| format!("Failed to release IP: {}", e))?;
 
     if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).to_string());
+        return Err(decode_output(&output.stderr));
     }
 
     Ok(())
@@ -156,7 +166,7 @@ pub fn renew_ip() -> Result<(), String> {
         .map_err(|e| format!("Failed to renew IP: {}", e))?;
 
     if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).to_string());
+        return Err(decode_output(&output.stderr));
     }
 
     Ok(())
@@ -169,7 +179,7 @@ pub fn reset_network() -> Result<(), String> {
         .map_err(|e| format!("Failed to reset network: {}", e))?;
 
     if !output.status.success() {
-        return Err(String::from_utf8_lossy(&output.stderr).to_string());
+        return Err(decode_output(&output.stderr));
     }
 
     Ok(())

@@ -1,6 +1,16 @@
 use crate::RegistryValue;
 use winreg::RegKey;
 use winreg::enums::*;
+use encoding_rs::GBK;
+
+fn decode_output(bytes: &[u8]) -> String {
+    let (decoded, _, had_errors) = GBK.decode(bytes);
+    if had_errors {
+        String::from_utf8_lossy(bytes).to_string()
+    } else {
+        decoded.to_string()
+    }
+}
 
 pub fn get_registry_tree() -> Result<Vec<serde_json::Value>, String> {
     let roots = vec![
@@ -173,7 +183,7 @@ pub fn export_registry_key(path: &str) -> Result<String, String> {
         .output()
         .map_err(|e| format!("Failed to export registry: {}", e))?;
 
-    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    Ok(decode_output(&output.stdout))
 }
 
 pub fn get_registry_subkeys(path: &str) -> Result<Vec<serde_json::Value>, String> {
