@@ -336,7 +336,7 @@ const numericValue = computed({
   set: (val) => { valueForm.value.value = String(val) }
 })
 
-async function loadNode(node: any, resolve: Function) {
+async function loadNode(node: { level: number; data: TreeNode }, resolve: (nodes: TreeNode[]) => void) {
   if (node.level === 0) {
     resolve(registryTree.value)
     return

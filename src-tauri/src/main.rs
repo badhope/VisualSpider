@@ -1,3 +1,3 @@
 fn main() {
-    windows_toolbox_lib::run()
+    visual_spider_lib::run()
 }
