@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛠️ VisualSpider
+# 🛠️ WindowsTools
 
 ### Windows 系统工具箱
 
@@ -353,7 +353,7 @@ VisualSpider is a professional system management tool for Windows users, built w
 
 **Option 1: Download Release (Recommended)**
 
-Visit the [Releases](https://github.com/badhope/VisualSpider/releases) page to download the latest installer.
+Visit the [Releases](https://github.com/badhope/WindowsTools/releases) page to download the latest installer.
 
 **Option 2: Build from Source**
 
